@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دليل الفحص الميكانيكي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#D9DCDA; --panel:#F3F4F2; --ink:#1B2428; --muted:#5B676C; --line:#B9C0BE;
+  --plate:#E8A600; --plate-ink:#1B2428;
+  --good:#2F7A4B; --monitor:#A86400; --action:#B42318;
+  --good-bg:#DDEEE2; --monitor-bg:#F7E7CC; --action-bg:#F6DAD6;
+  --focus:#1F5FAF;
+  --font:"IBM Plex Sans Arabic", Tahoma, "Segoe UI", system-ui, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181A; --panel:#1E2427; --ink:#E4E8E7; --muted:#9AA5A9; --line:#39434A;
+    --good:#6CC08D; --monitor:#E6A94A; --action:#F07A6E;
+    --good-bg:#1D3326; --monitor-bg:#3A2C14; --action-bg:#3D1F1C; --focus:#7AB0F0;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14181A; --panel:#1E2427; --ink:#E4E8E7; --muted:#9AA5A9; --line:#39434A;
+  --good:#6CC08D; --monitor:#E6A94A; --action:#F07A6E;
+  --good-bg:#1D3326; --monitor-bg:#3A2C14; --action-bg:#3D1F1C; --focus:#7AB0F0;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.6}
+[hidden]{display:none !important}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1,h2,h3{line-height:1.3;margin:0}
+h1{font-size:1.25rem;font-weight:700}
+h2{font-size:1.375rem;font-weight:700}
+h3{font-size:1.0625rem;font-weight:700}
+p{margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+
+/* Buttons & fields */
+.btn{border:2px solid var(--ink);background:var(--ink);color:var(--panel);padding:10px 18px;border-radius:6px;font-weight:700;cursor:pointer;min-height:44px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.danger{background:transparent;border-color:var(--action);color:var(--action)}
+.btn.small{padding:4px 12px;min-height:36px;font-size:.9rem}
+.field{display:grid;gap:4px;margin-bottom:14px}
+.field label{font-weight:500;font-size:.95rem}
+.field input,.field select,.field textarea,select.inline{background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:10px 12px;min-height:44px;width:100%}
+.field textarea{min-height:80px;resize:vertical}
+.hint{color:var(--muted);font-size:.875rem}
+.err{color:var(--action);font-weight:500;min-height:1.6em}
+
+/* Auth screens */
+.auth{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.auth-card{width:100%;max-width:400px;background:var(--panel);border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.auth-card .plate-head{background:var(--plate);color:var(--plate-ink);padding:18px 22px}
+.auth-card .plate-head p{font-weight:500;opacity:.8}
+.auth-card form,.auth-card .body{padding:22px}
+.auth-card .btn{width:100%}
+.auth-card ol{padding-inline-start:20px;margin:8px 0 0}
+code{direction:ltr;unicode-bidi:embed;background:var(--bg);padding:1px 6px;border-radius:4px;font-size:.9em}
+
+/* App chrome */
+header.top{background:var(--ink);color:var(--panel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+header.top .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;padding-bottom:4px}
+header.top .who{font-size:.875rem;opacity:.8}
+header.top .btn.ghost{color:var(--panel);border-color:rgba(255,255,255,.4);min-height:36px;padding:4px 12px;font-size:.875rem}
+nav.tabs{display:flex;gap:4px;overflow-x:auto}
+nav.tabs button{background:none;border:0;color:var(--panel);opacity:.7;padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;font-weight:500}
+nav.tabs button[aria-selected="true"]{opacity:1;border-bottom-color:var(--plate)}
+main{padding:20px 0 60px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+
+/* Equipment picker */
+.eq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.eq-btn{text-align:start;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:12px 14px;cursor:pointer;display:grid;gap:2px}
+.eq-btn:hover{border-color:var(--ink)}
+.eq-btn .tag{direction:ltr;text-align:left;font-weight:700}
+.eq-btn .meta{color:var(--muted);font-size:.85rem}
+.area-title{color:var(--muted);font-weight:500;margin:0 0 10px}
+
+/* Nameplate: the memorable element */
+.nameplate{background:var(--plate);color:var(--plate-ink);border-radius:6px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;position:relative}
+.nameplate::before,.nameplate::after{content:"";position:absolute;top:10px;width:9px;height:9px;border-radius:50%;background:rgba(0,0,0,.28)}
+.nameplate::before{left:10px}.nameplate::after{right:10px}
+.nameplate .tag{direction:ltr;font-size:1.75rem;font-weight:700;letter-spacing:.02em;line-height:1.1}
+.nameplate .area{font-weight:500}
+.nameplate .btn{border-color:var(--plate-ink);color:var(--plate-ink);background:transparent;min-height:38px;padding:4px 12px}
+
+/* Checklist */
+.progress{font-weight:500;margin-bottom:10px;color:var(--muted)}
+.items{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.item{background:var(--panel);border:1.5px solid var(--line);border-inline-start:6px solid var(--line);border-radius:6px;padding:12px 14px}
+.item[data-status="good"]{border-inline-start-color:var(--good)}
+.item[data-status="monitor"]{border-inline-start-color:var(--monitor)}
+.item[data-status="action"]{border-inline-start-color:var(--action)}
+.item .text{direction:ltr;text-align:left;font-weight:500;margin-bottom:10px}
+.item .text .n{color:var(--muted);margin-inline-end:6px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg button{border:1.5px solid var(--line);background:transparent;border-radius:6px;min-height:44px;cursor:pointer;font-weight:500}
+.seg button[aria-pressed="true"][data-s="good"]{background:var(--good-bg);border-color:var(--good);color:var(--good)}
+.seg button[aria-pressed="true"][data-s="monitor"]{background:var(--monitor-bg);border-color:var(--monitor);color:var(--monitor)}
+.seg button[aria-pressed="true"][data-s="action"]{background:var(--action-bg);border-color:var(--action);color:var(--action)}
+.item .note{margin-top:8px;width:100%;background:var(--bg);border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;min-height:40px}
+.linkish{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:6px 0 0;font-size:.9rem}
+.save-bar{position:sticky;bottom:env(safe-area-inset-bottom,0px);background:var(--bg);padding:12px 0;margin-top:16px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;justify-content:space-between}
+
+/* History */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.filters select{flex:1 1 220px}
+.log{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.log details{background:var(--panel);border:1.5px solid var(--line);border-radius:6px}
+.log summary{cursor:pointer;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:2px 12px;list-style:none}
+.log summary::-webkit-details-marker{display:none}
+.log .tag{direction:ltr;text-align:left;font-weight:700;justify-self:start}
+.log .when{color:var(--muted);font-size:.875rem}
+.chips{display:flex;gap:6px;grid-row:span 2;align-self:center}
+.chip{font-size:.8rem;font-weight:700;padding:2px 8px;border-radius:4px}
+.chip.good{background:var(--good-bg);color:var(--good)}
+.chip.monitor{background:var(--monitor-bg);color:var(--monitor)}
+.chip.action{background:var(--action-bg);color:var(--action)}
+.detail{border-top:1px solid var(--line);padding:12px 14px;display:grid;gap:8px}
+.drow{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.drow .t{direction:ltr;text-align:left}
+.drow .nt{grid-column:2;color:var(--muted);font-size:.9rem}
+.empty{background:var(--panel);border:1.5px dashed var(--line);border-radius:6px;padding:24px;text-align:center;color:var(--muted)}
+
+/* Users */
+.card{background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:18px;margin-bottom:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1.5px solid var(--line);border-radius:6px}
+th,td{padding:10px 12px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.875rem;color:var(--muted);font-weight:500}
+td .u{direction:ltr;display:inline-block}
+.off{color:var(--muted)}
+
+/* Photos */
+.item-actions{display:flex;gap:18px;flex-wrap:wrap}
+.thumbs{display:flex;gap:10px;flex-wrap:wrap}
+.thumbs:not(:empty){margin-top:10px}
+.thumb-wrap{position:relative}
+.thumb{width:72px;height:72px;border-radius:6px;overflow:hidden;border:1.5px solid var(--line);padding:0;background:var(--bg);cursor:zoom-in;display:block}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-rm{position:absolute;top:-8px;inset-inline-end:-8px;width:28px;height:28px;border-radius:50%;border:2px solid var(--panel);background:var(--action);color:#fff;font-weight:700;line-height:1;cursor:pointer;padding:0}
+.chip.neutral{background:var(--bg);color:var(--muted)}
+.drow .thumbs{grid-column:2}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:grid;place-items:center;z-index:30;padding:64px 16px 16px}
+.lightbox img{max-width:100%;max-height:calc(100vh - 80px);border-radius:4px}
+.lightbox button{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));inset-inline-start:16px;background:#fff;color:#111;border:0;border-radius:6px;padding:6px 14px;font-weight:700;min-height:40px;cursor:pointer}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--panel);padding:10px 18px;border-radius:6px;font-weight:500;z-index:20;max-width:90vw}
+@media (prefers-reduced-motion:no-preference){.toast{animation:pop .2s ease-out}@keyframes pop{from{opacity:0;transform:translate(-50%,8px)}}}
+</style>
+</head>
+<body>
+
+<!-- Config missing -->
+<section id="screen-config" class="auth" hidden>
+  <div class="auth-card">
+    <div class="plate-head"><h1>الموقع محتاج إعدادات Firebase</h1></div>
+    <div class="body">
+      <p>افتح ملف <code>index.html</code> وحط بيانات مشروعك مكان <code>firebaseConfig</code> في أول السكريبت، وبعدين ارفع الملف تاني.</p>
+      <p class="hint" style="margin-top:10px">الخطوات بالتفصيل في ملف دليل الإعداد.</p>
+    </div>
+  </div>
+</section>
+
+<!-- First-time setup -->
+<section id="screen-setup" class="auth" hidden>
+  <div class="auth-card">
+    <div class="plate-head"><h1>إعداد أول مرة</h1><p>اعمل حساب مدير النظام</p></div>
+    <form id="setup-form" novalidate>
+      <p class="hint" style="margin-bottom:14px">الشاشة دي بتظهر مرة واحدة بس. الحساب ده هيقدر يضيف باقي المستخدمين.</p>
+      <div class="field"><label for="s-name">الاسم</label><input id="s-name" required maxlength="80" autocomplete="name"></div>
+      <div class="field"><label for="s-user">اسم المستخدم</label><input id="s-user" required dir="ltr" autocomplete="username" autocapitalize="none"><span class="hint">حروف إنجليزي وأرقام، من 3 لـ 30 حرف</span></div>
+      <div class="field"><label for="s-pass">كلمة المرور</label><input id="s-pass" type="password" required dir="ltr" autocomplete="new-password"><span class="hint">6 حروف على الأقل</span></div>
+      <p class="err" id="setup-err" role="alert"></p>
+      <button class="btn" type="submit">إنشاء حساب المدير</button>
+    </form>
+  </div>
+</section>
+
+<!-- Login -->
+<section id="screen-login" class="auth" hidden>
+  <div class="auth-card">
+    <div class="plate-head"><h1>دليل الفحص الميكانيكي</h1><p>سجّل دخولك علشان تبدأ</p></div>
+    <form id="login-form" novalidate>
+      <div class="field"><label for="l-user">اسم المستخدم</label><input id="l-user" required dir="ltr" autocomplete="username" autocapitalize="none"></div>
+      <div class="field"><label for="l-pass">كلمة المرور</label><input id="l-pass" type="password" required dir="ltr" autocomplete="current-password"></div>
+      <p class="err" id="login-err" role="alert"></p>
+      <button class="btn" type="submit">دخول</button>
+    </form>
+  </div>
+</section>
+
+<!-- App -->
+<div id="screen-app" hidden>
+  <header class="top">
+    <div class="wrap">
+      <div class="row">
+        <div><h1>دليل الفحص الميكانيكي</h1><div class="who" id="who"></div></div>
+        <button class="btn ghost" id="logout">خروج</button>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="new" aria-selected="true">تفتيش جديد</button>
+        <button role="tab" data-tab="history" aria-selected="false">السجل</button>
+        <button role="tab" data-tab="users" aria-selected="false" id="tab-users-btn" hidden>المستخدمين</button>
+        <button role="tab" data-tab="account" aria-selected="false">حسابي</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- New inspection -->
+    <section id="tab-new" role="tabpanel">
+      <div id="pick">
+        <div class="section-head"><h2>اختار المعدة</h2></div>
+        <div id="eq-areas"></div>
+      </div>
+      <div id="fill" hidden>
+        <div class="nameplate">
+          <div><div class="tag" id="np-tag"></div><div class="area" id="np-area"></div></div>
+          <button class="btn" id="change-eq" type="button">تغيير المعدة</button>
+        </div>
+        <p class="progress" id="progress" aria-live="polite"></p>
+        <ul class="items" id="items"></ul>
+        <div class="field" style="margin-top:16px"><label for="gen-notes">ملاحظات عامة</label><textarea id="gen-notes" maxlength="2000"></textarea></div>
+        <div class="save-bar">
+          <span class="hint" id="save-hint"></span>
+          <button class="btn" id="save" type="button" disabled>حفظ التفتيش</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- History -->
+    <section id="tab-history" role="tabpanel" hidden>
+      <div class="section-head">
+        <h2>سجل التفتيشات</h2>
+        <button class="btn ghost small" id="export" type="button">تنزيل Excel (CSV)</button>
+      </div>
+      <div class="filters">
+        <select class="inline" id="f-eq" aria-label="تصفية بالمعدة"><option value="">كل المعدات</option></select>
+        <select class="inline" id="f-status" aria-label="تصفية بالحالة">
+          <option value="">كل التفتيشات</option>
+          <option value="action">فيها بنود تحتاج إصلاح</option>
+          <option value="monitor">فيها بنود تحتاج متابعة</option>
+        </select>
+        <button class="btn ghost small" id="refresh" type="button">تحديث</button>
+      </div>
+      <ul class="log" id="log"></ul>
+    </section>
+
+    <!-- Users (admin) -->
+    <section id="tab-users" role="tabpanel" hidden>
+      <div class="card">
+        <h2 style="margin-bottom:14px">إضافة مستخدم</h2>
+        <form id="add-user" novalidate>
+          <div class="grid2">
+            <div class="field"><label for="u-name">الاسم</label><input id="u-name" required maxlength="80"></div>
+            <div class="field"><label for="u-user">اسم المستخدم</label><input id="u-user" required dir="ltr" autocapitalize="none" autocomplete="off"></div>
+            <div class="field"><label for="u-pass">كلمة المرور</label><input id="u-pass" type="text" required dir="ltr" autocomplete="off"><span class="hint">6 حروف على الأقل. ابعتها للمستخدم وخليه يغيرها من "حسابي".</span></div>
+            <div class="field"><label for="u-role">الصلاحية</label>
+              <select id="u-role"><option value="inspector">مفتش</option><option value="admin">مدير</option></select>
+            </div>
+          </div>
+          <p class="err" id="add-err" role="alert"></p>
+          <button class="btn" type="submit" id="add-btn">إضافة المستخدم</button>
+        </form>
+      </div>
+      <div class="section-head"><h2>المستخدمين</h2></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>الصلاحية</th><th>الحالة</th></tr></thead>
+          <tbody id="users-body"></tbody>
+        </table>
+      </div>
+      <p class="hint" style="margin-top:10px">إيقاف المستخدم بيمنعه يدخل فورًا، وتفتيشاته القديمة بتفضل في السجل.</p>
+    </section>
+
+    <!-- Account -->
+    <section id="tab-account" role="tabpanel" hidden>
+      <div class="card">
+        <h2 style="margin-bottom:10px">بياناتي</h2>
+        <p id="acc-info"></p>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:14px">تغيير كلمة المرور</h2>
+        <form id="pw-form" novalidate>
+          <div class="field"><label for="pw-cur">كلمة المرور الحالية</label><input id="pw-cur" type="password" required dir="ltr" autocomplete="current-password"></div>
+          <div class="field"><label for="pw-new">كلمة المرور الجديدة</label><input id="pw-new" type="password" required dir="ltr" autocomplete="new-password"></div>
+          <div class="field"><label for="pw-new2">تأكيد كلمة المرور الجديدة</label><input id="pw-new2" type="password" required dir="ltr" autocomplete="new-password"></div>
+          <p class="err" id="pw-err" role="alert"></p>
+          <button class="btn" type="submit">تغيير كلمة المرور</button>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox" hidden><button type="button" id="lb-close">إغلاق</button><img id="lb-img" alt="صورة البند"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module">
+/* ============================================================
+   1) حط هنا بيانات مشروع Firebase بتاعك
+   (Firebase console > Project settings > Your apps > Web app)
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBIyHqOPj_T1wtJvitIoTRQtTTKgaGZuRw",
+  authDomain: "mechanical-inspection-guide.firebaseapp.com",
+  projectId: "mechanical-inspection-guide",
+  storageBucket: "mechanical-inspection-guide.firebasestorage.app",
+  messagingSenderId: "952838223303",
+  appId: "1:952838223303:web:8fc4aed44ade027c3f95e2"
+};
+
+/* قائمة المعدات والبنود (من ملف Schedule_For_CMs_Inspection.xlsx) */
+const EQUIPMENT = [{"area": "Gypsum Plant","tag": "Apron Feeder A81","items": ["Feeding Hopper, Deflectors and Net","Pans Condition","Rollers Condition","Chain Condition (Links & Pushing & Nuts)","Upper and Lower Rails Condition","Drive Bearings, Sprockets and Shaft Condition","Driven Bearings, Sprockets and Shaft Condition","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C A83","items": ["Feeding Chute and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup, bendings and counter weight drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C L19","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup, bendings and counter weight drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "L19 Magnetic Belt","items": ["Belt Condition","Drums and Bearings Condition","Gearmotor Condition"]},{"area": "Gypsum Plant","tag": "Gypsum Plant Deduster Filter","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]},{"area": "Gypsum Plant","tag": "B.C L20","items": ["Feeding Chute, Discharge Chutes, impact walls and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Drive Gearbox and Couplings Condition","Carrying wheels and run way beam"]},{"area": "Gypsum Plant","tag": "Deduster Filter On L19/L20&L75","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]},{"area": "Gypsum Plant","tag": "B.C L75","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C L76","items": ["Feeding Chute, Discharge Chutes, impact walls and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Drive Gearbox and Couplings Condition","Carrying wheels and run way beam"]},{"area": "Gypsum Plant","tag": "Deduster Filter On L75/L76&M11-02","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]},{"area": "Gypsum Plant","tag": "B.C M11-02","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C M11-07","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C M11-10","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "Deduster Filter On M11-02/M11-07&M11-10","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]}];
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, where,
+         query, orderBy, limit, serverTimestamp, writeBatch }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const EMAIL_DOMAIN = "inspection.example.com"; // اسم المستخدم بيتحول لإيميل داخلي، محدش بيستخدمه
+const STATUS = { good: "سليم", monitor: "متابعة", action: "يحتاج إصلاح" };
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const fmt = new Intl.DateTimeFormat("ar-EG-u-nu-latn", { dateStyle: "medium", timeStyle: "short" });
+const toEmail = u => `${u}@${EMAIL_DOMAIN}`;
+const cleanUser = u => u.trim().toLowerCase();
+const validUser = u => /^[a-z0-9._-]{3,30}$/.test(u);
+
+let app, auth, db, secondaryApp;
+let profile = null;
+let settingUp = false;
+let pendingLoginError = "";
+
+function show(id) {
+  for (const s of ["config", "setup", "login", "app"]) $("#screen-" + s).hidden = s !== id;
+  if (id === "login") { $("#login-err").textContent = pendingLoginError; pendingLoginError = ""; }
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 3000);
+}
+
+function authMsg(e) {
+  const c = e?.code || "";
+  if (["auth/invalid-credential","auth/wrong-password","auth/user-not-found","auth/invalid-login-credentials","auth/invalid-email"].includes(c))
+    return "اسم المستخدم أو كلمة المرور غلط.";
+  if (c === "auth/too-many-requests") return "محاولات كتير. استنى شوية وجرب تاني.";
+  if (c === "auth/email-already-in-use") return "اسم المستخدم ده موجود قبل كده. اختار اسم تاني.";
+  if (c === "auth/weak-password") return "كلمة المرور لازم تكون 6 حروف على الأقل.";
+  if (c === "auth/network-request-failed") return "مفيش اتصال بالإنترنت.";
+  if (c === "auth/operation-not-allowed") return "تسجيل الدخول بالإيميل والباسورد مش مفعّل في Firebase.";
+  if (c === "permission-denied") return "مفيش صلاحية. اتأكد إن قواعد Firestore متنشرة.";
+  return "حصل خطأ: " + (e?.message || c);
+}
+
+/* ---------------- Start ---------------- */
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith("PASTE")) {
+  show("config");
+} else {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  onAuthStateChanged(auth, handleAuth);
+}
+
+async function handleAuth(u) {
+  if (settingUp) return;
+  if (!u) {
+    profile = null;
+    try {
+      const b = await getDoc(doc(db, "meta", "bootstrap"));
+      show(b.exists() ? "login" : "setup");
+    } catch (e) {
+      pendingLoginError = authMsg(e);
+      show("login");
+    }
+    return;
+  }
+  try {
+    const snap = await getDoc(doc(db, "users", u.uid));
+    if (!snap.exists() || snap.data().active !== true) {
+      pendingLoginError = "الحساب ده موقوف أو مش مسجل. كلّم مدير النظام.";
+      await signOut(auth);
+      return;
+    }
+    profile = { uid: u.uid, ...snap.data() };
+    enterApp();
+  } catch (e) {
+    pendingLoginError = authMsg(e);
+    await signOut(auth);
+  }
+}
+
+/* ---------------- Setup (first admin) ---------------- */
+$("#setup-form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const name = $("#s-name").value.trim(), user = cleanUser($("#s-user").value), pass = $("#s-pass").value;
+  const err = $("#setup-err");
+  if (!name) return (err.textContent = "اكتب الاسم.");
+  if (!validUser(user)) return (err.textContent = "اسم المستخدم لازم يكون حروف إنجليزي صغيرة أو أرقام، من 3 لـ 30.");
+  if (pass.length < 6) return (err.textContent = "كلمة المرور لازم تكون 6 حروف على الأقل.");
+  err.textContent = "";
+  settingUp = true;
+  try {
+    let cred;
+    try { cred = await createUserWithEmailAndPassword(auth, toEmail(user), pass); }
+    catch (e) {
+      if (e.code === "auth/email-already-in-use") cred = await signInWithEmailAndPassword(auth, toEmail(user), pass);
+      else throw e;
+    }
+    const uid = cred.user.uid;
+    const batch = writeBatch(db);
+    batch.set(doc(db, "users", uid), { username: user, name, role: "admin", active: true, createdAt: serverTimestamp(), createdBy: uid });
+    batch.set(doc(db, "meta", "bootstrap"), { adminUid: uid, createdAt: serverTimestamp() });
+    await batch.commit();
+    settingUp = false;
+    handleAuth(auth.currentUser);
+  } catch (e) {
+    settingUp = false;
+    err.textContent = authMsg(e);
+    if (auth.currentUser) await signOut(auth).catch(() => {});
+  }
+});
+
+/* ---------------- Login ---------------- */
+$("#login-form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const user = cleanUser($("#l-user").value), pass = $("#l-pass").value;
+  const err = $("#login-err");
+  if (!user || !pass) return (err.textContent = "اكتب اسم المستخدم وكلمة المرور.");
+  err.textContent = "";
+  try { await signInWithEmailAndPassword(auth, toEmail(user), pass); $("#l-pass").value = ""; }
+  catch (e) { err.textContent = authMsg(e); }
+});
+
+$("#logout").addEventListener("click", () => signOut(auth));
+
+/* ---------------- App shell ---------------- */
+function enterApp() {
+  show("app");
+  $("#who").textContent = `${profile.name} (${profile.role === "admin" ? "مدير" : "مفتش"})`;
+  $("#tab-users-btn").hidden = profile.role !== "admin";
+  $("#acc-info").innerHTML = `${esc(profile.name)}<br><span class="hint">اسم المستخدم: <code>${esc(profile.username)}</code></span>`;
+  renderPicker();
+  selectTab("new");
+}
+
+document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => selectTab(b.dataset.tab)));
+function selectTab(name) {
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+  for (const t of ["new", "history", "users", "account"]) $("#tab-" + t).hidden = t !== name;
+  if (name === "history") loadHistory();
+  if (name === "users") loadUsers();
+  window.scrollTo(0, 0);
+}
+
+/* ---------------- New inspection ---------------- */
+let draft = null;
+
+function renderPicker() {
+  const areas = [...new Set(EQUIPMENT.map(e => e.area))];
+  $("#eq-areas").innerHTML = areas.map(a => `
+    <h3 class="area-title">${esc(a)}</h3>
+    <div class="eq-grid">${EQUIPMENT.map((e, i) => e.area !== a ? "" : `
+      <button class="eq-btn" type="button" data-i="${i}">
+        <span class="tag">${esc(e.tag)}</span><span class="meta">${e.items.length} بنود</span>
+      </button>`).join("")}</div>`).join("");
+  $("#eq-areas").querySelectorAll(".eq-btn").forEach(b => b.addEventListener("click", () => startDraft(+b.dataset.i)));
+  $("#f-eq").innerHTML = `<option value="">كل المعدات</option>` + EQUIPMENT.map(e => `<option>${esc(e.tag)}</option>`).join("");
+}
+
+function startDraft(i) {
+  const e = EQUIPMENT[i];
+  draft = { area: e.area, equipment: e.tag, items: e.items.map(item => ({ item, status: "", note: "", photos: [] })) };
+  $("#np-tag").textContent = e.tag;
+  $("#np-area").textContent = e.area;
+  $("#gen-notes").value = "";
+  $("#items").innerHTML = draft.items.map((it, k) => `
+    <li class="item" data-k="${k}" data-status="">
+      <div class="text"><span class="n">${k + 1}.</span>${esc(it.item)}</div>
+      <div class="seg" role="group" aria-label="حالة البند ${k + 1}">
+        ${Object.entries(STATUS).map(([s, label]) => `<button type="button" data-s="${s}" aria-pressed="false">${label}</button>`).join("")}
+      </div>
+      <div class="item-actions">
+        <button type="button" class="linkish add-note">إضافة ملاحظة</button>
+        <button type="button" class="linkish add-photo">إضافة صورة</button>
+        <input type="file" class="photo-input" accept="image/*" capture="environment" hidden>
+      </div>
+      <input class="note" hidden maxlength="500" aria-label="ملاحظة البند ${k + 1}" placeholder="اكتب الملاحظة">
+      <div class="thumbs"></div>
+    </li>`).join("");
+  $("#items").querySelectorAll(".item").forEach(li => {
+    const k = +li.dataset.k, note = li.querySelector(".note"), addBtn = li.querySelector(".add-note");
+    li.querySelectorAll(".seg button").forEach(btn => btn.addEventListener("click", () => {
+      draft.items[k].status = btn.dataset.s;
+      li.dataset.status = btn.dataset.s;
+      li.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === btn));
+      if (btn.dataset.s !== "good" && note.hidden) { note.hidden = false; addBtn.hidden = true; }
+      updateProgress();
+    }));
+    addBtn.addEventListener("click", () => { note.hidden = false; addBtn.hidden = true; note.focus(); });
+    note.addEventListener("input", () => (draft.items[k].note = note.value));
+    const photoBtn = li.querySelector(".add-photo"), photoIn = li.querySelector(".photo-input");
+    photoBtn.addEventListener("click", () => photoIn.click());
+    photoIn.addEventListener("change", async () => {
+      const f = photoIn.files[0]; photoIn.value = "";
+      if (!f) return;
+      if (draft.items[k].photos.length >= MAX_PHOTOS) return toast(`أقصى عدد ${MAX_PHOTOS} صور للبند.`);
+      photoBtn.disabled = true; photoBtn.textContent = "جاري تجهيز الصورة...";
+      try { draft.items[k].photos.push(await compressImage(f)); renderThumbs(li, k); }
+      catch { toast("الصورة دي مش هتنفع. جرب صورة تانية."); }
+      photoBtn.disabled = false; photoBtn.textContent = "إضافة صورة";
+    });
+  });
+  $("#pick").hidden = true; $("#fill").hidden = false;
+  updateProgress();
+  window.scrollTo(0, 0);
+}
+
+const MAX_PHOTOS = 3;
+
+// تصغير وضغط الصورة على الموبايل قبل الحفظ، علشان تتخزن في Firestore المجاني
+async function compressImage(file) {
+  const img = await new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { URL.revokeObjectURL(url); res(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error("bad image")); };
+    im.src = url;
+  });
+  let side = 1280, quality = 0.72, data;
+  for (let tries = 0; tries < 6; tries++) {
+    const scale = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    data = c.toDataURL("image/jpeg", quality);
+    if (data.length <= 300000) return data;
+    side = Math.round(side * 0.8); quality = Math.max(0.5, quality - 0.06);
+  }
+  if (data.length > 800000) throw new Error("too big");
+  return data;
+}
+
+function renderThumbs(li, k) {
+  const box = li.querySelector(".thumbs");
+  box.innerHTML = draft.items[k].photos.map((src, j) => `
+    <div class="thumb-wrap">
+      <button type="button" class="thumb" data-j="${j}" aria-label="عرض الصورة ${j + 1}"><img src="${src}" alt=""></button>
+      <button type="button" class="thumb-rm" data-j="${j}" aria-label="حذف الصورة ${j + 1}">×</button>
+    </div>`).join("");
+  box.querySelectorAll(".thumb").forEach(b => b.addEventListener("click", () => openLightbox(draft.items[k].photos[+b.dataset.j])));
+  box.querySelectorAll(".thumb-rm").forEach(b => b.addEventListener("click", () => { draft.items[k].photos.splice(+b.dataset.j, 1); renderThumbs(li, k); }));
+  li.querySelector(".add-photo").hidden = draft.items[k].photos.length >= MAX_PHOTOS;
+}
+
+let lbReturn = null;
+function openLightbox(src) {
+  lbReturn = document.activeElement;
+  $("#lb-img").src = src; $("#lightbox").hidden = false; $("#lb-close").focus();
+}
+function closeLightbox() { $("#lightbox").hidden = true; $("#lb-img").removeAttribute("src"); lbReturn?.focus?.(); }
+$("#lb-close").addEventListener("click", closeLightbox);
+$("#lightbox").addEventListener("click", e => { if (e.target.id === "lightbox") closeLightbox(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#lightbox").hidden) closeLightbox(); });
+
+function updateProgress() {
+  const done = draft.items.filter(i => i.status).length, total = draft.items.length;
+  $("#progress").textContent = `${done} من ${total} بنود متعلّم عليها`;
+  $("#save").disabled = done < total;
+  $("#save-hint").textContent = done < total ? `باقي ${total - done} بنود` : "جاهز للحفظ";
+}
+
+$("#change-eq").addEventListener("click", () => {
+  if (draft && draft.items.some(i => i.status) && !confirm("البيانات اللي كتبتها هتتمسح. تكمل؟")) return;
+  draft = null; $("#fill").hidden = true; $("#pick").hidden = false;
+});
+
+$("#save").addEventListener("click", async () => {
+  const btn = $("#save"); btn.disabled = true; btn.textContent = "جاري الحفظ...";
+  const counts = { good: 0, monitor: 0, action: 0 };
+  draft.items.forEach(i => counts[i.status]++);
+  const photoTotal = draft.items.reduce((n, i) => n + i.photos.length, 0);
+  try {
+    const ref = doc(collection(db, "inspections"));
+    await setDoc(ref, {
+      area: draft.area, equipment: draft.equipment,
+      items: draft.items.map(i => ({ item: i.item, status: i.status, note: i.note.trim(), photos: i.photos.length })),
+      notes: $("#gen-notes").value.trim(), counts, photoCount: photoTotal,
+      inspectorUid: profile.uid, inspectorName: profile.name, createdAt: serverTimestamp()
+    });
+    let failed = 0, done = 0;
+    for (const [k, it] of draft.items.entries()) {
+      for (const data of it.photos) {
+        btn.textContent = `جاري رفع الصور ${++done} من ${photoTotal}...`;
+        try { await addDoc(collection(db, "photos"), { inspectionId: ref.id, item: k, data, uid: profile.uid, createdAt: serverTimestamp() }); }
+        catch { failed++; }
+      }
+    }
+    toast(failed ? `اتحفظ التفتيش، بس ${failed} صور ماترفعتش. اتأكد من النت.` : "اتحفظ التفتيش");
+    draft = null; $("#fill").hidden = true; $("#pick").hidden = false; window.scrollTo(0, 0);
+  } catch (e) { toast(authMsg(e)); btn.disabled = false; }
+  btn.textContent = "حفظ التفتيش";
+});
+
+/* ---------------- History ---------------- */
+let history = [];
+
+async function loadHistory() {
+  $("#log").innerHTML = `<li class="empty">جاري التحميل...</li>`;
+  try {
+    const snap = await getDocs(query(collection(db, "inspections"), orderBy("createdAt", "desc"), limit(500)));
+    history = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderHistory();
+  } catch (e) { $("#log").innerHTML = `<li class="empty">${esc(authMsg(e))}</li>`; }
+}
+
+function filtered() {
+  const eq = $("#f-eq").value, st = $("#f-status").value;
+  return history.filter(h => (!eq || h.equipment === eq) && (!st || (h.counts?.[st] || 0) > 0));
+}
+
+function renderHistory() {
+  const list = filtered();
+  if (!list.length) {
+    $("#log").innerHTML = `<li class="empty">${history.length ? "مفيش تفتيشات بالتصفية دي." : "لسه مفيش تفتيشات. ابدأ من \"تفتيش جديد\"."}</li>`;
+    return;
+  }
+  $("#log").innerHTML = list.map(h => {
+    const c = h.counts || {};
+    const when = h.createdAt?.toDate ? fmt.format(h.createdAt.toDate()) : "";
+    return `<li><details data-id="${esc(h.id)}">
+      <summary>
+        <span class="tag">${esc(h.equipment)}</span>
+        <span class="chips">
+          ${c.good ? `<span class="chip good">${c.good} سليم</span>` : ""}
+          ${c.monitor ? `<span class="chip monitor">${c.monitor} متابعة</span>` : ""}
+          ${c.action ? `<span class="chip action">${c.action} إصلاح</span>` : ""}
+          ${h.photoCount ? `<span class="chip neutral">${h.photoCount} صور</span>` : ""}
+        </span>
+        <span class="when">${esc(when)}، ${esc(h.inspectorName)}</span>
+      </summary>
+      <div class="detail">
+        ${(h.items || []).map((i, k) => `<div class="drow">
+            <span class="chip ${esc(i.status)}">${esc(STATUS[i.status] || i.status)}</span>
+            <span class="t">${esc(i.item)}</span>
+            ${i.note ? `<span class="nt">${esc(i.note)}</span>` : ""}
+            ${i.photos ? `<div class="thumbs" data-item="${k}"><span class="hint">جاري تحميل الصور...</span></div>` : ""}
+          </div>`).join("")}
+        ${h.notes ? `<p><strong>ملاحظات عامة:</strong> ${esc(h.notes)}</p>` : ""}
+        ${profile.role === "admin" ? `<div><button class="btn danger small del" type="button">حذف التفتيش</button></div>` : ""}
+      </div>
+    </details></li>`;
+  }).join("");
+  $("#log").querySelectorAll("details").forEach(d => d.addEventListener("toggle", () => {
+    if (d.open && !d.dataset.loaded && d.querySelector(".thumbs")) { d.dataset.loaded = "1"; loadPhotos(d); }
+  }));
+  $("#log").querySelectorAll(".del").forEach(b => b.addEventListener("click", async () => {
+    const id = b.closest("details").dataset.id;
+    if (!confirm("متأكد إنك عاوز تحذف التفتيش ده؟ مش هينفع ترجعه.")) return;
+    try {
+      const ps = await getDocs(query(collection(db, "photos"), where("inspectionId", "==", id)));
+      for (const p of ps.docs) await deleteDoc(p.ref);
+      await deleteDoc(doc(db, "inspections", id)); history = history.filter(h => h.id !== id); renderHistory(); toast("اتحذف التفتيش"); }
+    catch (e) { toast(authMsg(e)); }
+  }));
+}
+async function loadPhotos(d) {
+  const boxes = d.querySelectorAll(".thumbs");
+  try {
+    const snap = await getDocs(query(collection(db, "photos"), where("inspectionId", "==", d.dataset.id)));
+    const byItem = {};
+    snap.docs.forEach(p => { const x = p.data(); (byItem[x.item] ||= []).push(x.data); });
+    boxes.forEach(box => {
+      const list = (byItem[box.dataset.item] || []).filter(s => typeof s === "string" && s.startsWith("data:image/"));
+      box.innerHTML = list.length ? list.map((src, j) => `<button type="button" class="thumb" data-j="${j}" aria-label="عرض الصورة ${j + 1}"><img src="${src}" alt=""></button>`).join("")
+                                  : `<span class="hint">الصور مش موجودة.</span>`;
+      box.querySelectorAll(".thumb").forEach(b => b.addEventListener("click", () => openLightbox(list[+b.dataset.j])));
+    });
+  } catch (e) { boxes.forEach(b => (b.innerHTML = `<span class="hint">${esc(authMsg(e))}</span>`)); d.dataset.loaded = ""; }
+}
+
+$("#f-eq").addEventListener("change", renderHistory);
+$("#f-status").addEventListener("change", renderHistory);
+$("#refresh").addEventListener("click", loadHistory);
+
+$("#export").addEventListener("click", () => {
+  const list = filtered();
+  if (!list.length) return toast("مفيش بيانات للتنزيل.");
+  const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const rows = [["التاريخ", "المنطقة", "المعدة", "المفتش", "البند", "الحالة", "ملاحظة البند", "ملاحظات عامة"]];
+  list.forEach(h => {
+    const when = h.createdAt?.toDate ? fmt.format(h.createdAt.toDate()) : "";
+    (h.items || []).forEach(i => rows.push([when, h.area, h.equipment, h.inspectorName, i.item, STATUS[i.status] || i.status, i.note, h.notes]));
+  });
+  const csv = "\ufeff" + rows.map(r => r.map(q).join(",")).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = `inspections-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+/* ---------------- Users (admin) ---------------- */
+async function loadUsers() {
+  const body = $("#users-body");
+  body.innerHTML = `<tr><td colspan="4">جاري التحميل...</td></tr>`;
+  try {
+    const snap = await getDocs(collection(db, "users"));
+    const users = snap.docs.map(d => ({ uid: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name, "ar"));
+    body.innerHTML = users.map(u => {
+      const me = u.uid === profile.uid;
+      return `<tr data-uid="${esc(u.uid)}" class="${u.active ? "" : "off"}">
+        <td>${esc(u.name)}${me ? ' <span class="hint">(إنت)</span>' : ""}</td>
+        <td><span class="u">${esc(u.username)}</span></td>
+        <td><select class="inline role" ${me ? "disabled" : ""} aria-label="صلاحية ${esc(u.name)}">
+          <option value="inspector" ${u.role === "inspector" ? "selected" : ""}>مفتش</option>
+          <option value="admin" ${u.role === "admin" ? "selected" : ""}>مدير</option>
+        </select></td>
+        <td>${me ? "مفعّل" : `<button class="btn small ${u.active ? "danger" : ""} toggle" type="button">${u.active ? "إيقاف" : "تفعيل"}</button>`}</td>
+      </tr>`;
+    }).join("");
+    body.querySelectorAll("tr").forEach(tr => {
+      const uid = tr.dataset.uid;
+      tr.querySelector(".role")?.addEventListener("change", async ev => {
+        try { await updateDoc(doc(db, "users", uid), { role: ev.target.value }); toast("اتغيرت الصلاحية"); }
+        catch (e) { toast(authMsg(e)); loadUsers(); }
+      });
+      tr.querySelector(".toggle")?.addEventListener("click", async () => {
+        const u = users.find(x => x.uid === uid);
+        try { await updateDoc(doc(db, "users", uid), { active: !u.active }); toast(u.active ? "اتوقف المستخدم" : "اتفعّل المستخدم"); loadUsers(); }
+        catch (e) { toast(authMsg(e)); }
+      });
+    });
+  } catch (e) { body.innerHTML = `<tr><td colspan="4">${esc(authMsg(e))}</td></tr>`; }
+}
+
+$("#add-user").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const name = $("#u-name").value.trim(), user = cleanUser($("#u-user").value), pass = $("#u-pass").value, role = $("#u-role").value;
+  const err = $("#add-err"), btn = $("#add-btn");
+  if (!name) return (err.textContent = "اكتب الاسم.");
+  if (!validUser(user)) return (err.textContent = "اسم المستخدم لازم يكون حروف إنجليزي صغيرة أو أرقام، من 3 لـ 30.");
+  if (pass.length < 6) return (err.textContent = "كلمة المرور لازم تكون 6 حروف على الأقل.");
+  err.textContent = ""; btn.disabled = true;
+  try {
+    // تطبيق Firebase تاني علشان إنشاء المستخدم مايخرجش المدير من حسابه
+    if (!secondaryApp) secondaryApp = initializeApp(firebaseConfig, "secondary");
+    const sAuth = getAuth(secondaryApp);
+    const cred = await createUserWithEmailAndPassword(sAuth, toEmail(user), pass);
+    await setDoc(doc(db, "users", cred.user.uid), { username: user, name, role, active: true, createdAt: serverTimestamp(), createdBy: profile.uid });
+    await signOut(sAuth);
+    ev.target.reset();
+    toast(`اتضاف ${name}`);
+    loadUsers();
+  } catch (e) { err.textContent = authMsg(e); }
+  btn.disabled = false;
+});
+
+/* ---------------- Account ---------------- */
+$("#pw-form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const cur = $("#pw-cur").value, n1 = $("#pw-new").value, n2 = $("#pw-new2").value, err = $("#pw-err");
+  if (n1.length < 6) return (err.textContent = "كلمة المرور الجديدة لازم تكون 6 حروف على الأقل.");
+  if (n1 !== n2) return (err.textContent = "كلمتين المرور الجداد مش زي بعض.");
+  err.textContent = "";
+  try {
+    await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(auth.currentUser.email, cur));
+    await updatePassword(auth.currentUser, n1);
+    ev.target.reset();
+    toast("اتغيرت كلمة المرور");
+  } catch (e) {
+    err.textContent = ["auth/invalid-credential","auth/wrong-password","auth/invalid-login-credentials"].includes(e.code)
+      ? "كلمة المرور الحالية غلط." : authMsg(e);
+  }
+});
+</script>
+</body>
+</html>
