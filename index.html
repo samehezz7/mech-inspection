@@ -13,7 +13,7 @@
   --plate:#E8A600; --plate-ink:#1B2428;
   --good:#2F7A4B; --monitor:#A86400; --action:#B42318;
   --good-bg:#DDEEE2; --monitor-bg:#F7E7CC; --action-bg:#F6DAD6;
-  --focus:#1F5FAF;
+  --focus:#1F5FAF; --chrome:#1B2428; --chrome-ink:#F3F4F2;
   --font:"IBM Plex Sans Arabic", Tahoma, "Segoe UI", system-ui, sans-serif;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
@@ -23,12 +23,14 @@
     --bg:#14181A; --panel:#1E2427; --ink:#E4E8E7; --muted:#9AA5A9; --line:#39434A;
     --good:#6CC08D; --monitor:#E6A94A; --action:#F07A6E;
     --good-bg:#1D3326; --monitor-bg:#3A2C14; --action-bg:#3D1F1C; --focus:#7AB0F0;
+    --chrome:#263036; --chrome-ink:#E4E8E7;
   }
 }
 :root[data-theme="dark"]{
   --bg:#14181A; --panel:#1E2427; --ink:#E4E8E7; --muted:#9AA5A9; --line:#39434A;
   --good:#6CC08D; --monitor:#E6A94A; --action:#F07A6E;
   --good-bg:#1D3326; --monitor-bg:#3A2C14; --action-bg:#3D1F1C; --focus:#7AB0F0;
+  --chrome:#263036; --chrome-ink:#E4E8E7;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -67,12 +69,12 @@ p{margin:0}
 code{direction:ltr;unicode-bidi:embed;background:var(--bg);padding:1px 6px;border-radius:4px;font-size:.9em}
 
 /* App chrome */
-header.top{background:var(--ink);color:var(--panel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+header.top{background:var(--chrome);color:var(--chrome-ink);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 header.top .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;padding-bottom:4px}
 header.top .who{font-size:.875rem;opacity:.8}
-header.top .btn.ghost{color:var(--panel);border-color:rgba(255,255,255,.4);min-height:36px;padding:4px 12px;font-size:.875rem}
+header.top .btn.ghost{color:var(--chrome-ink);border-color:rgba(255,255,255,.4);min-height:36px;padding:4px 12px;font-size:.875rem}
 nav.tabs{display:flex;gap:4px;overflow-x:auto}
-nav.tabs button{background:none;border:0;color:var(--panel);opacity:.7;padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;font-weight:500}
+nav.tabs button{background:none;border:0;color:var(--chrome-ink);opacity:.7;padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;font-weight:500}
 nav.tabs button[aria-selected="true"]{opacity:1;border-bottom-color:var(--plate)}
 main{padding:20px 0 60px}
 .section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
@@ -151,7 +153,45 @@ td .u{direction:ltr;display:inline-block}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .thumb-rm{position:absolute;top:-8px;inset-inline-end:-8px;width:28px;height:28px;border-radius:50%;border:2px solid var(--panel);background:var(--action);color:#fff;font-weight:700;line-height:1;cursor:pointer;padding:0}
 .chip.neutral{background:var(--bg);color:var(--muted)}
-.drow .thumbs{grid-column:2}
+.drow .thumbs{grid-column:2;justify-content:flex-end}
+.drow .nt{text-align:left;unicode-bidi:plaintext}
+
+/* Dashboard */
+.freq-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin-bottom:12px}
+.freq-tabs button{flex:none;display:flex;gap:8px;align-items:center;border:1.5px solid var(--line);background:var(--panel);border-radius:6px;padding:8px 14px;min-height:44px;font-weight:500;cursor:pointer}
+.freq-tabs button[aria-selected="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.badge{min-width:24px;height:24px;border-radius:12px;padding:0 7px;display:inline-grid;place-items:center;font-size:.8rem;font-weight:700;background:var(--plate);color:var(--plate-ink)}
+.badge.zero{background:var(--good-bg);color:var(--good)}
+.dash-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.dash-head select{max-width:260px}
+.due-card{text-align:start;background:var(--panel);border:1.5px solid var(--line);border-inline-start:6px solid var(--plate);border-radius:6px;padding:12px 14px;cursor:pointer;display:grid;gap:4px}
+.due-card:hover{border-color:var(--ink)}
+.due-card.done{border-inline-start-color:var(--good)}
+.due-card .tag{direction:ltr;text-align:left;font-weight:700}
+.due-card .meta{color:var(--muted);font-size:.85rem}
+.due-card .st{font-size:.85rem;font-weight:500;color:var(--monitor)}
+.due-card.done .st{color:var(--good)}
+.route-block{margin-bottom:22px}
+
+/* Equipment admin */
+.route-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:20px 0 10px}
+.eq-row{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px}
+.eq-row.off{opacity:.6}
+.eq-row .tag{direction:ltr;text-align:left;font-weight:700}
+.eq-row .meta{color:var(--muted);font-size:.85rem}
+.check{display:flex;gap:10px;align-items:center;min-height:44px;margin-bottom:10px;cursor:pointer}
+.check input{width:20px;height:20px}
+.bulk{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.bulk select{flex:1 1 180px;max-width:260px}
+.ed-items{list-style:none;padding:0;margin:0 0 12px;display:grid;gap:8px}
+.ed-item{display:grid;grid-template-columns:auto 1fr 150px auto;gap:8px;align-items:center;background:var(--bg);border:1.5px solid var(--line);border-radius:6px;padding:8px}
+.ed-item .n{color:var(--muted);font-weight:500;min-width:1.5em;text-align:center}
+.ed-item input,.ed-item select{background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;min-height:44px;width:100%}
+.ed-btns{display:flex;gap:6px}
+.icon-btn{min-width:44px;min-height:44px;border:1.5px solid var(--line);background:var(--panel);border-radius:6px;cursor:pointer;font-weight:700}
+.icon-btn:disabled{opacity:.35;cursor:default}
+.icon-btn.rm{color:var(--action)}
+@media (max-width:620px){.ed-item{grid-template-columns:auto 1fr auto}.ed-item .ed-text{grid-column:2/4}.ed-item select{grid-column:2}.ed-item .ed-btns{grid-column:3}.ed-item .icon-btn{min-width:40px}}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:grid;place-items:center;z-index:30;padding:64px 16px 16px}
 .lightbox img{max-width:100%;max-height:calc(100vh - 80px);border-radius:4px}
 .lightbox button{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));inset-inline-start:16px;background:#fff;color:#111;border:0;border-radius:6px;padding:6px 14px;font-weight:700;min-height:40px;cursor:pointer}
@@ -210,8 +250,9 @@ td .u{direction:ltr;display:inline-block}
         <button class="btn ghost" id="logout">خروج</button>
       </div>
       <nav class="tabs" role="tablist">
-        <button role="tab" data-tab="new" aria-selected="true">تفتيش جديد</button>
+        <button role="tab" data-tab="home" aria-selected="true">الرئيسية</button>
         <button role="tab" data-tab="history" aria-selected="false">السجل</button>
+        <button role="tab" data-tab="equipment" aria-selected="false" id="tab-eq-btn" hidden>المعدات</button>
         <button role="tab" data-tab="users" aria-selected="false" id="tab-users-btn" hidden>المستخدمين</button>
         <button role="tab" data-tab="account" aria-selected="false">حسابي</button>
       </nav>
@@ -219,16 +260,20 @@ td .u{direction:ltr;display:inline-block}
   </header>
 
   <main class="wrap">
-    <!-- New inspection -->
-    <section id="tab-new" role="tabpanel">
-      <div id="pick">
-        <div class="section-head"><h2>اختار المعدة</h2></div>
-        <div id="eq-areas"></div>
+    <!-- Dashboard + inspection -->
+    <section id="tab-home" role="tabpanel">
+      <div id="dash">
+        <div class="freq-tabs" id="freq-tabs" role="tablist" aria-label="تكرار الفحص"></div>
+        <div class="dash-head">
+          <p id="dash-summary"></p>
+          <select class="inline" id="f-route" aria-label="تصفية بالـ Route"><option value="">كل الـ Routes</option></select>
+        </div>
+        <div id="dash-list"></div>
       </div>
       <div id="fill" hidden>
         <div class="nameplate">
           <div><div class="tag" id="np-tag"></div><div class="area" id="np-area"></div></div>
-          <button class="btn" id="change-eq" type="button">تغيير المعدة</button>
+          <button class="btn" id="change-eq" type="button">رجوع</button>
         </div>
         <p class="progress" id="progress" aria-live="polite"></p>
         <ul class="items" id="items"></ul>
@@ -253,9 +298,55 @@ td .u{direction:ltr;display:inline-block}
           <option value="action">فيها بنود تحتاج إصلاح</option>
           <option value="monitor">فيها بنود تحتاج متابعة</option>
         </select>
+        <select class="inline" id="f-freq" aria-label="تصفية بالتكرار"><option value="">كل التكرارات</option></select>
         <button class="btn ghost small" id="refresh" type="button">تحديث</button>
       </div>
       <ul class="log" id="log"></ul>
+    </section>
+
+    <!-- Equipment (admin) -->
+    <section id="tab-equipment" role="tabpanel" hidden>
+      <div id="eq-list-view">
+        <div class="section-head">
+          <h2>المعدات وبنود الفحص</h2>
+          <button class="btn small" id="eq-add" type="button">إضافة معدة</button>
+        </div>
+        <div class="card" id="eq-import" hidden>
+          <h3 style="margin-bottom:8px">مفيش معدات لسه</h3>
+          <p class="hint" style="margin-bottom:12px">تقدر تستورد القائمة الأساسية (14 معدة و95 بند من ملف Schedule For CMs Inspection)، وبعدين تعدّل تكرار كل بند.</p>
+          <div class="bulk">
+            <label for="imp-freq">التكرار المبدئي لكل البنود</label>
+            <select class="inline" id="imp-freq"></select>
+            <button class="btn small" id="imp-btn" type="button">استيراد القائمة الأساسية</button>
+          </div>
+        </div>
+        <div id="eq-admin-list"></div>
+      </div>
+      <div id="eq-edit-view" hidden>
+        <div class="card">
+          <h2 id="ed-title" style="margin-bottom:14px">إضافة معدة</h2>
+          <div class="grid2">
+            <div class="field"><label for="ed-tag">اسم/كود المعدة</label><input id="ed-tag" dir="ltr" maxlength="80" placeholder="B.C L19"></div>
+            <div class="field"><label for="ed-route">الـ Route</label><input id="ed-route" list="routes-dl" maxlength="80" placeholder="Gypsum Plant"><datalist id="routes-dl"></datalist><span class="hint">اختار Route موجود أو اكتب اسم جديد</span></div>
+          </div>
+          <label class="check"><input type="checkbox" id="ed-active"> المعدة شغالة وتظهر في الرئيسية</label>
+          <h3 style="margin:8px 0 10px">بنود الفحص</h3>
+          <div class="bulk">
+            <select class="inline" id="ed-bulk" aria-label="تكرار لكل البنود"></select>
+            <button class="btn ghost small" id="ed-bulk-btn" type="button">تطبيق على كل البنود</button>
+          </div>
+          <ol class="ed-items" id="ed-items"></ol>
+          <button class="btn ghost small" id="ed-add-item" type="button">إضافة بند</button>
+          <p class="err" id="ed-err" role="alert" style="margin-top:12px"></p>
+          <div class="save-bar">
+            <button class="btn danger small" id="ed-delete" type="button">حذف المعدة</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn ghost" id="ed-cancel" type="button">إلغاء</button>
+              <button class="btn" id="ed-save" type="button">حفظ المعدة</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Users (admin) -->
@@ -322,8 +413,8 @@ const firebaseConfig = {
   appId: "1:952838223303:web:8fc4aed44ade027c3f95e2"
 };
 
-/* قائمة المعدات والبنود (من ملف Schedule_For_CMs_Inspection.xlsx) */
-const EQUIPMENT = [{"area": "Gypsum Plant","tag": "Apron Feeder A81","items": ["Feeding Hopper, Deflectors and Net","Pans Condition","Rollers Condition","Chain Condition (Links & Pushing & Nuts)","Upper and Lower Rails Condition","Drive Bearings, Sprockets and Shaft Condition","Driven Bearings, Sprockets and Shaft Condition","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C A83","items": ["Feeding Chute and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup, bendings and counter weight drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C L19","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup, bendings and counter weight drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "L19 Magnetic Belt","items": ["Belt Condition","Drums and Bearings Condition","Gearmotor Condition"]},{"area": "Gypsum Plant","tag": "Gypsum Plant Deduster Filter","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]},{"area": "Gypsum Plant","tag": "B.C L20","items": ["Feeding Chute, Discharge Chutes, impact walls and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Drive Gearbox and Couplings Condition","Carrying wheels and run way beam"]},{"area": "Gypsum Plant","tag": "Deduster Filter On L19/L20&L75","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]},{"area": "Gypsum Plant","tag": "B.C L75","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C L76","items": ["Feeding Chute, Discharge Chutes, impact walls and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Drive Gearbox and Couplings Condition","Carrying wheels and run way beam"]},{"area": "Gypsum Plant","tag": "Deduster Filter On L75/L76&M11-02","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]},{"area": "Gypsum Plant","tag": "B.C M11-02","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C M11-07","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C M11-10","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "Deduster Filter On M11-02/M11-07&M11-10","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]}];
+/* القائمة الأساسية للاستيراد أول مرة (من ملف Schedule_For_CMs_Inspection.xlsx) */
+const SEED = [{"area": "Gypsum Plant","tag": "Apron Feeder A81","items": ["Feeding Hopper, Deflectors and Net","Pans Condition","Rollers Condition","Chain Condition (Links & Pushing & Nuts)","Upper and Lower Rails Condition","Drive Bearings, Sprockets and Shaft Condition","Driven Bearings, Sprockets and Shaft Condition","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C A83","items": ["Feeding Chute and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup, bendings and counter weight drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C L19","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup, bendings and counter weight drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "L19 Magnetic Belt","items": ["Belt Condition","Drums and Bearings Condition","Gearmotor Condition"]},{"area": "Gypsum Plant","tag": "Gypsum Plant Deduster Filter","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]},{"area": "Gypsum Plant","tag": "B.C L20","items": ["Feeding Chute, Discharge Chutes, impact walls and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Drive Gearbox and Couplings Condition","Carrying wheels and run way beam"]},{"area": "Gypsum Plant","tag": "Deduster Filter On L19/L20&L75","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]},{"area": "Gypsum Plant","tag": "B.C L75","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C L76","items": ["Feeding Chute, Discharge Chutes, impact walls and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Drive Gearbox and Couplings Condition","Carrying wheels and run way beam"]},{"area": "Gypsum Plant","tag": "Deduster Filter On L75/L76&M11-02","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]},{"area": "Gypsum Plant","tag": "B.C M11-02","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C M11-07","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "B.C M11-10","items": ["Feeding Chute, Impact wall and Deflectors Condition","Rubber Belt Condition","Upper and Lower Rollers and Supports Condition","Side Skirts and impact table Condition","Return Scrapers Condition","Drive shaft, bearings and drum condition","Driven shaft, bearings and drum condition","Snup drums (Shaft & Bearings)","Drive Gearbox and Couplings Condition"]},{"area": "Gypsum Plant","tag": "Deduster Filter On M11-02/M11-07&M11-10","items": ["Fan Impeller, bearings, pulley and V belts Condition","Bags and pulsation system condition","Suction ducts efficiency"]}];
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
@@ -335,6 +426,28 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collec
 
 const EMAIL_DOMAIN = "inspection.example.com"; // اسم المستخدم بيتحول لإيميل داخلي، محدش بيستخدمه
 const STATUS = { good: "سليم", monitor: "متابعة", action: "يحتاج إصلاح" };
+const FREQS = [
+  { id: "daily", label: "يومي" },
+  { id: "weekly", label: "أسبوعي" },
+  { id: "monthly", label: "شهري" },
+  { id: "quarterly", label: "كل 3 شهور" },
+  { id: "semiannual", label: "كل 6 شهور" },
+  { id: "yearly", label: "سنوي" }
+];
+const FREQ_LABEL = Object.fromEntries(FREQS.map(f => [f.id, f.label]));
+const freqOptions = sel => FREQS.map(f => `<option value="${f.id}" ${f.id === sel ? "selected" : ""}>${f.label}</option>`).join("");
+const dayFmt = new Intl.DateTimeFormat("ar-EG-u-nu-latn", { day: "numeric", month: "numeric" });
+
+// بداية الفترة الحالية لكل تكرار (الأسبوع بيبدأ السبت)
+function periodStart(f, now = new Date()) {
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  if (f === "daily") return new Date(y, m, d);
+  if (f === "weekly") { const s = new Date(y, m, d); s.setDate(d - ((s.getDay() + 1) % 7)); return s; }
+  if (f === "monthly") return new Date(y, m, 1);
+  if (f === "quarterly") return new Date(y, m - (m % 3), 1);
+  if (f === "semiannual") return new Date(y, m < 6 ? 0 : 6, 1);
+  return new Date(y, 0, 1);
+}
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
@@ -459,15 +572,17 @@ function enterApp() {
   show("app");
   $("#who").textContent = `${profile.name} (${profile.role === "admin" ? "مدير" : "مفتش"})`;
   $("#tab-users-btn").hidden = profile.role !== "admin";
+  $("#tab-eq-btn").hidden = profile.role !== "admin";
   $("#acc-info").innerHTML = `${esc(profile.name)}<br><span class="hint">اسم المستخدم: <code>${esc(profile.username)}</code></span>`;
-  renderPicker();
-  selectTab("new");
+  selectTab("home");
 }
 
 document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => selectTab(b.dataset.tab)));
 function selectTab(name) {
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
-  for (const t of ["new", "history", "users", "account"]) $("#tab-" + t).hidden = t !== name;
+  for (const t of ["home", "history", "equipment", "users", "account"]) $("#tab-" + t).hidden = t !== name;
+  if (name === "home" && !draft) loadData().then(renderDash);
+  if (name === "equipment") { showEqList(); loadData().then(renderEqAdmin); }
   if (name === "history") loadHistory();
   if (name === "users") loadUsers();
   window.scrollTo(0, 0);
@@ -476,23 +591,76 @@ function selectTab(name) {
 /* ---------------- New inspection ---------------- */
 let draft = null;
 
-function renderPicker() {
-  const areas = [...new Set(EQUIPMENT.map(e => e.area))];
-  $("#eq-areas").innerHTML = areas.map(a => `
-    <h3 class="area-title">${esc(a)}</h3>
-    <div class="eq-grid">${EQUIPMENT.map((e, i) => e.area !== a ? "" : `
-      <button class="eq-btn" type="button" data-i="${i}">
-        <span class="tag">${esc(e.tag)}</span><span class="meta">${e.items.length} بنود</span>
-      </button>`).join("")}</div>`).join("");
-  $("#eq-areas").querySelectorAll(".eq-btn").forEach(b => b.addEventListener("click", () => startDraft(+b.dataset.i)));
-  $("#f-eq").innerHTML = `<option value="">كل المعدات</option>` + EQUIPMENT.map(e => `<option>${esc(e.tag)}</option>`).join("");
+/* ---------------- Data ---------------- */
+let equipment = [], statusMap = {}, curFreq = "daily";
+
+async function loadData() {
+  try {
+    const [eqSnap, stSnap] = await Promise.all([getDocs(collection(db, "equipment")), getDocs(collection(db, "status"))]);
+    equipment = eqSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.route || "").localeCompare(b.route || "") || (a.order ?? 0) - (b.order ?? 0) || a.tag.localeCompare(b.tag));
+    statusMap = Object.fromEntries(stSnap.docs.map(d => [d.id, d.data()]));
+  } catch (e) { toast(authMsg(e)); }
+}
+const routesOf = list => [...new Set(list.map(e => e.route || "بدون Route"))];
+
+/* ---------------- Dashboard ---------------- */
+function isDone(e, f) {
+  const s = statusMap[`${e.id}_${f}`];
+  return s?.lastAt?.toDate && s.lastAt.toDate() >= periodStart(f);
 }
 
-function startDraft(i) {
-  const e = EQUIPMENT[i];
-  draft = { area: e.area, equipment: e.tag, items: e.items.map(item => ({ item, status: "", note: "", photos: [] })) };
+function renderDash() {
+  const active = equipment.filter(e => e.active !== false);
+  const forFreq = f => active.filter(e => (e.items || []).some(i => i.freq === f));
+  $("#freq-tabs").innerHTML = FREQS.map(f => {
+    const list = forFreq(f.id), pending = list.filter(e => !isDone(e, f.id)).length;
+    return `<button type="button" role="tab" data-f="${f.id}" aria-selected="${f.id === curFreq}">
+      ${f.label}${list.length ? ` <span class="badge ${pending ? "" : "zero"}">${pending || "✓"}</span>` : ""}</button>`;
+  }).join("");
+  $("#freq-tabs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => { curFreq = b.dataset.f; renderDash(); }));
+
+  const rSel = $("#f-route"), keep = rSel.value, routes = routesOf(active);
+  rSel.innerHTML = `<option value="">كل الـ Routes</option>` + routes.map(r => `<option ${r === keep ? "selected" : ""}>${esc(r)}</option>`).join("");
+
+  const list = forFreq(curFreq).filter(e => !rSel.value || (e.route || "بدون Route") === rSel.value);
+  const done = list.filter(e => isDone(e, curFreq)).length;
+  const from = periodStart(curFreq);
+  $("#dash-summary").textContent = list.length
+    ? `${done} من ${list.length} معدات اتفحصت ${curFreq === "daily" ? "النهارده" : `من ${dayFmt.format(from)}`}`
+    : "";
+
+  if (!active.length) {
+    $("#dash-list").innerHTML = `<div class="empty">${profile.role === "admin" ? "لسه مفيش معدات. ضيفها من تبويب \"المعدات\"." : "لسه مفيش معدات. كلّم مدير النظام."}</div>`;
+    return;
+  }
+  if (!list.length) {
+    $("#dash-list").innerHTML = `<div class="empty">مفيش معدات ليها بنود فحص ${esc(FREQ_LABEL[curFreq])}.</div>`;
+    return;
+  }
+  $("#dash-list").innerHTML = routesOf(list).map(r => {
+    const items = list.filter(e => (e.route || "بدون Route") === r)
+      .sort((a, b) => isDone(a, curFreq) - isDone(b, curFreq));
+    return `<div class="route-block"><h3 class="area-title">${esc(r)}</h3><div class="eq-grid">${items.map(e => {
+      const n = e.items.filter(i => i.freq === curFreq).length, ok = isDone(e, curFreq);
+      const s = statusMap[`${e.id}_${curFreq}`];
+      const st = ok ? `تم ${dayFmt.format(s.lastAt.toDate())}، ${esc(s.lastBy)}` : "مطلوب";
+      return `<button class="due-card ${ok ? "done" : ""}" type="button" data-id="${esc(e.id)}">
+        <span class="tag">${esc(e.tag)}</span><span class="meta">${n} بنود</span><span class="st">${st}</span></button>`;
+    }).join("")}</div></div>`;
+  }).join("");
+  $("#dash-list").querySelectorAll(".due-card").forEach(b => b.addEventListener("click", () => startDraft(b.dataset.id, curFreq)));
+}
+$("#f-route").addEventListener("change", renderDash);
+
+
+function startDraft(eqId, freq) {
+  const e = equipment.find(x => x.id === eqId);
+  if (!e) return;
+  draft = { equipmentId: e.id, freq, area: e.route || "", equipment: e.tag,
+    items: e.items.filter(i => i.freq === freq).map(i => ({ item: i.text, status: "", note: "", photos: [] })) };
   $("#np-tag").textContent = e.tag;
-  $("#np-area").textContent = e.area;
+  $("#np-area").textContent = `${e.route ? e.route + "، " : ""}فحص ${FREQ_LABEL[freq]}`;
   $("#gen-notes").value = "";
   $("#items").innerHTML = draft.items.map((it, k) => `
     <li class="item" data-k="${k}" data-status="">
@@ -531,7 +699,7 @@ function startDraft(i) {
       photoBtn.disabled = false; photoBtn.textContent = "إضافة صورة";
     });
   });
-  $("#pick").hidden = true; $("#fill").hidden = false;
+  $("#dash").hidden = true; $("#fill").hidden = false;
   updateProgress();
   window.scrollTo(0, 0);
 }
@@ -591,7 +759,7 @@ function updateProgress() {
 
 $("#change-eq").addEventListener("click", () => {
   if (draft && draft.items.some(i => i.status) && !confirm("البيانات اللي كتبتها هتتمسح. تكمل؟")) return;
-  draft = null; $("#fill").hidden = true; $("#pick").hidden = false;
+  draft = null; $("#fill").hidden = true; $("#dash").hidden = false; renderDash(); window.scrollTo(0, 0);
 });
 
 $("#save").addEventListener("click", async () => {
@@ -602,11 +770,15 @@ $("#save").addEventListener("click", async () => {
   try {
     const ref = doc(collection(db, "inspections"));
     await setDoc(ref, {
-      area: draft.area, equipment: draft.equipment,
+      area: draft.area, equipment: draft.equipment, equipmentId: draft.equipmentId, freq: draft.freq,
       items: draft.items.map(i => ({ item: i.item, status: i.status, note: i.note.trim(), photos: i.photos.length })),
       notes: $("#gen-notes").value.trim(), counts, photoCount: photoTotal,
       inspectorUid: profile.uid, inspectorName: profile.name, createdAt: serverTimestamp()
     });
+    try {
+      await setDoc(doc(db, "status", `${draft.equipmentId}_${draft.freq}`), {
+        equipmentId: draft.equipmentId, freq: draft.freq, lastAt: serverTimestamp(), lastBy: profile.name, lastInspectionId: ref.id });
+    } catch (e) { console.warn("status", e); }
     let failed = 0, done = 0;
     for (const [k, it] of draft.items.entries()) {
       for (const data of it.photos) {
@@ -616,7 +788,8 @@ $("#save").addEventListener("click", async () => {
       }
     }
     toast(failed ? `اتحفظ التفتيش، بس ${failed} صور ماترفعتش. اتأكد من النت.` : "اتحفظ التفتيش");
-    draft = null; $("#fill").hidden = true; $("#pick").hidden = false; window.scrollTo(0, 0);
+    draft = null; $("#fill").hidden = true; $("#dash").hidden = false; window.scrollTo(0, 0);
+    await loadData(); renderDash();
   } catch (e) { toast(authMsg(e)); btn.disabled = false; }
   btn.textContent = "حفظ التفتيش";
 });
@@ -629,13 +802,15 @@ async function loadHistory() {
   try {
     const snap = await getDocs(query(collection(db, "inspections"), orderBy("createdAt", "desc"), limit(500)));
     history = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const keep = $("#f-eq").value, tags = [...new Set([...equipment.map(e => e.tag), ...history.map(x => x.equipment)])].sort();
+    $("#f-eq").innerHTML = `<option value="">كل المعدات</option>` + tags.map(t => `<option ${t === keep ? "selected" : ""}>${esc(t)}</option>`).join("");
     renderHistory();
   } catch (e) { $("#log").innerHTML = `<li class="empty">${esc(authMsg(e))}</li>`; }
 }
 
 function filtered() {
-  const eq = $("#f-eq").value, st = $("#f-status").value;
-  return history.filter(h => (!eq || h.equipment === eq) && (!st || (h.counts?.[st] || 0) > 0));
+  const eq = $("#f-eq").value, st = $("#f-status").value, fq = $("#f-freq").value;
+  return history.filter(h => (!eq || h.equipment === eq) && (!st || (h.counts?.[st] || 0) > 0) && (!fq || h.freq === fq));
 }
 
 function renderHistory() {
@@ -651,6 +826,7 @@ function renderHistory() {
       <summary>
         <span class="tag">${esc(h.equipment)}</span>
         <span class="chips">
+          ${h.freq ? `<span class="chip neutral">${esc(FREQ_LABEL[h.freq] || h.freq)}</span>` : ""}
           ${c.good ? `<span class="chip good">${c.good} سليم</span>` : ""}
           ${c.monitor ? `<span class="chip monitor">${c.monitor} متابعة</span>` : ""}
           ${c.action ? `<span class="chip action">${c.action} إصلاح</span>` : ""}
@@ -679,10 +855,28 @@ function renderHistory() {
     try {
       const ps = await getDocs(query(collection(db, "photos"), where("inspectionId", "==", id)));
       for (const p of ps.docs) await deleteDoc(p.ref);
-      await deleteDoc(doc(db, "inspections", id)); history = history.filter(h => h.id !== id); renderHistory(); toast("اتحذف التفتيش"); }
+      await deleteDoc(doc(db, "inspections", id));
+      await fixStatusAfterDelete(history.find(x => x.id === id)); history = history.filter(h => h.id !== id); renderHistory(); toast("اتحذف التفتيش"); }
     catch (e) { toast(authMsg(e)); }
   }));
 }
+// لو التفتيش المحذوف كان آخر تفتيش للمعدة، نرجّع الحالة لآخر تفتيش قبله
+async function fixStatusAfterDelete(h) {
+  if (!h?.equipmentId || !h.freq) return;
+  const key = `${h.equipmentId}_${h.freq}`, ref = doc(db, "status", key);
+  try {
+    const cur = await getDoc(ref);
+    if (!cur.exists() || cur.data().lastInspectionId !== h.id) return;
+    const snap = await getDocs(query(collection(db, "inspections"), where("equipmentId", "==", h.equipmentId)));
+    const prev = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(x => x.freq === h.freq && x.createdAt?.toMillis)
+      .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())[0];
+    if (prev) await setDoc(ref, { equipmentId: h.equipmentId, freq: h.freq, lastAt: prev.createdAt, lastBy: prev.inspectorName, lastInspectionId: prev.id });
+    else await deleteDoc(ref);
+    delete statusMap[key];
+  } catch (e) { console.warn("fixStatus", e); }
+}
+
 async function loadPhotos(d) {
   const boxes = d.querySelectorAll(".thumbs");
   try {
@@ -700,16 +894,18 @@ async function loadPhotos(d) {
 
 $("#f-eq").addEventListener("change", renderHistory);
 $("#f-status").addEventListener("change", renderHistory);
+$("#f-freq").innerHTML += FREQS.map(f => `<option value="${f.id}">${f.label}</option>`).join("");
+$("#f-freq").addEventListener("change", renderHistory);
 $("#refresh").addEventListener("click", loadHistory);
 
 $("#export").addEventListener("click", () => {
   const list = filtered();
   if (!list.length) return toast("مفيش بيانات للتنزيل.");
   const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const rows = [["التاريخ", "المنطقة", "المعدة", "المفتش", "البند", "الحالة", "ملاحظة البند", "ملاحظات عامة"]];
+  const rows = [["التاريخ", "الـ Route", "المعدة", "التكرار", "المفتش", "البند", "الحالة", "ملاحظة البند", "ملاحظات عامة"]];
   list.forEach(h => {
     const when = h.createdAt?.toDate ? fmt.format(h.createdAt.toDate()) : "";
-    (h.items || []).forEach(i => rows.push([when, h.area, h.equipment, h.inspectorName, i.item, STATUS[i.status] || i.status, i.note, h.notes]));
+    (h.items || []).forEach(i => rows.push([when, h.area, h.equipment, FREQ_LABEL[h.freq] || "", h.inspectorName, i.item, STATUS[i.status] || i.status, i.note, h.notes]));
   });
   const csv = "\ufeff" + rows.map(r => r.map(q).join(",")).join("\r\n");
   const a = document.createElement("a");
@@ -717,6 +913,141 @@ $("#export").addEventListener("click", () => {
   a.download = `inspections-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+/* ---------------- Equipment (admin) ---------------- */
+let edit = null;
+
+function showEqList() { edit = null; $("#eq-edit-view").hidden = true; $("#eq-list-view").hidden = false; }
+
+function freqSummary(items) {
+  const c = {}; (items || []).forEach(i => (c[i.freq] = (c[i.freq] || 0) + 1));
+  return FREQS.filter(f => c[f.id]).map(f => `${c[f.id]} ${f.label}`).join("، ");
+}
+
+function renderEqAdmin() {
+  $("#eq-import").hidden = equipment.length > 0;
+  $("#imp-freq").innerHTML = freqOptions("monthly");
+  if (!equipment.length) { $("#eq-admin-list").innerHTML = ""; return; }
+  $("#eq-admin-list").innerHTML = routesOf(equipment).map(r => `
+    <div class="route-head"><h3>${esc(r)}</h3>
+      ${r === "بدون Route" ? "" : `<button class="btn ghost small rename" type="button" data-r="${esc(r)}">تغيير اسم الـ Route</button>`}</div>
+    ${equipment.filter(e => (e.route || "بدون Route") === r).map(e => `
+      <div class="eq-row ${e.active === false ? "off" : ""}">
+        <div><div class="tag">${esc(e.tag)}</div>
+          <div class="meta">${(e.items || []).length} بنود: ${esc(freqSummary(e.items))}${e.active === false ? "، موقوفة" : ""}</div></div>
+        <button class="btn ghost small edit" type="button" data-id="${esc(e.id)}">تعديل</button>
+      </div>`).join("")}`).join("");
+  $("#eq-admin-list").querySelectorAll(".edit").forEach(b => b.addEventListener("click", () => openEditor(equipment.find(e => e.id === b.dataset.id))));
+  $("#eq-admin-list").querySelectorAll(".rename").forEach(b => b.addEventListener("click", () => renameRoute(b.dataset.r)));
+}
+
+async function renameRoute(oldName) {
+  const name = (prompt(`الاسم الجديد للـ Route "${oldName}":`, oldName) || "").trim();
+  if (!name || name === oldName) return;
+  try {
+    const batch = writeBatch(db);
+    equipment.filter(e => e.route === oldName).forEach(e => batch.update(doc(db, "equipment", e.id), { route: name.slice(0, 80), updatedAt: serverTimestamp() }));
+    await batch.commit();
+    toast("اتغير اسم الـ Route");
+    await loadData(); renderEqAdmin();
+  } catch (e) { toast(authMsg(e)); }
+}
+
+$("#imp-btn").addEventListener("click", async () => {
+  const f = $("#imp-freq").value, btn = $("#imp-btn");
+  btn.disabled = true;
+  try {
+    const batch = writeBatch(db);
+    SEED.forEach((e, i) => batch.set(doc(collection(db, "equipment")), {
+      tag: e.tag, route: e.area, items: e.items.map(text => ({ text, freq: f })), active: true, order: i, updatedAt: serverTimestamp() }));
+    await batch.commit();
+    toast("اتستوردت القائمة الأساسية");
+    await loadData(); renderEqAdmin();
+  } catch (e) { toast(authMsg(e)); }
+  btn.disabled = false;
+});
+
+$("#eq-add").addEventListener("click", () => openEditor(null));
+
+function openEditor(e) {
+  edit = e ? { id: e.id, order: e.order ?? 0, items: (e.items || []).map(i => ({ ...i })) } : { id: null, order: null, items: [{ text: "", freq: "monthly" }] };
+  $("#ed-title").textContent = e ? `تعديل ${e.tag}` : "إضافة معدة";
+  $("#ed-tag").value = e?.tag || "";
+  $("#ed-route").value = e?.route || "";
+  $("#ed-active").checked = e ? e.active !== false : true;
+  $("#ed-delete").hidden = !e;
+  $("#ed-err").textContent = "";
+  $("#ed-bulk").innerHTML = freqOptions("monthly");
+  $("#routes-dl").innerHTML = routesOf(equipment).filter(r => r !== "بدون Route").map(r => `<option value="${esc(r)}">`).join("");
+  renderEdItems();
+  $("#eq-list-view").hidden = true; $("#eq-edit-view").hidden = false;
+  window.scrollTo(0, 0);
+}
+
+function renderEdItems(focusLast) {
+  const n = edit.items.length;
+  $("#ed-items").innerHTML = edit.items.map((it, k) => `
+    <li class="ed-item" data-k="${k}">
+      <span class="n">${k + 1}</span>
+      <input class="ed-text" dir="auto" maxlength="200" value="${esc(it.text)}" placeholder="مثلًا: Rubber Belt Condition" aria-label="نص البند ${k + 1}">
+      <select class="ed-freq" aria-label="تكرار البند ${k + 1}">${freqOptions(it.freq)}</select>
+      <span class="ed-btns">
+        <button type="button" class="icon-btn up" ${k === 0 ? "disabled" : ""} aria-label="طلّع البند ${k + 1} لفوق">↑</button>
+        <button type="button" class="icon-btn down" ${k === n - 1 ? "disabled" : ""} aria-label="نزّل البند ${k + 1} لتحت">↓</button>
+        <button type="button" class="icon-btn rm" aria-label="امسح البند ${k + 1}">×</button>
+      </span>
+    </li>`).join("");
+  $("#ed-items").querySelectorAll(".ed-item").forEach(li => {
+    const k = +li.dataset.k;
+    li.querySelector(".ed-text").addEventListener("input", ev => (edit.items[k].text = ev.target.value));
+    li.querySelector(".ed-freq").addEventListener("change", ev => (edit.items[k].freq = ev.target.value));
+    li.querySelector(".up").addEventListener("click", () => { [edit.items[k - 1], edit.items[k]] = [edit.items[k], edit.items[k - 1]]; renderEdItems(); });
+    li.querySelector(".down").addEventListener("click", () => { [edit.items[k + 1], edit.items[k]] = [edit.items[k], edit.items[k + 1]]; renderEdItems(); });
+    li.querySelector(".rm").addEventListener("click", () => { edit.items.splice(k, 1); renderEdItems(); });
+  });
+  if (focusLast) $("#ed-items").querySelector(".ed-item:last-child .ed-text")?.focus();
+}
+
+$("#ed-add-item").addEventListener("click", () => {
+  const last = edit.items[edit.items.length - 1];
+  edit.items.push({ text: "", freq: last?.freq || "monthly" });
+  renderEdItems(true);
+});
+$("#ed-bulk-btn").addEventListener("click", () => {
+  const f = $("#ed-bulk").value;
+  edit.items.forEach(i => (i.freq = f));
+  renderEdItems();
+  toast(`كل البنود بقت ${FREQ_LABEL[f]}`);
+});
+$("#ed-cancel").addEventListener("click", showEqList);
+
+$("#ed-save").addEventListener("click", async () => {
+  const err = $("#ed-err"), tag = $("#ed-tag").value.trim(), route = $("#ed-route").value.trim();
+  const items = edit.items.map(i => ({ text: i.text.trim(), freq: i.freq })).filter(i => i.text);
+  if (!tag) return (err.textContent = "اكتب اسم أو كود المعدة.");
+  if (!items.length) return (err.textContent = "ضيف بند فحص واحد على الأقل.");
+  if (equipment.some(e => e.id !== edit.id && e.tag.toLowerCase() === tag.toLowerCase())) return (err.textContent = "فيه معدة بنفس الاسم ده. اختار اسم تاني.");
+  err.textContent = "";
+  const btn = $("#ed-save"); btn.disabled = true;
+  const data = { tag, route, items, active: $("#ed-active").checked, updatedAt: serverTimestamp(),
+    order: edit.order ?? (Math.max(-1, ...equipment.map(e => e.order ?? 0)) + 1) };
+  try {
+    if (edit.id) await setDoc(doc(db, "equipment", edit.id), data);
+    else await addDoc(collection(db, "equipment"), data);
+    toast("اتحفظت المعدة");
+    showEqList(); await loadData(); renderEqAdmin();
+  } catch (e) { err.textContent = authMsg(e); }
+  btn.disabled = false;
+});
+
+$("#ed-delete").addEventListener("click", async () => {
+  if (!edit?.id || !confirm("متأكد إنك عاوز تحذف المعدة دي؟ تفتيشاتها القديمة هتفضل في السجل.")) return;
+  try {
+    await deleteDoc(doc(db, "equipment", edit.id));
+    toast("اتحذفت المعدة");
+    showEqList(); await loadData(); renderEqAdmin();
+  } catch (e) { toast(authMsg(e)); }
 });
 
 /* ---------------- Users (admin) ---------------- */
