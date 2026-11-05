@@ -173,6 +173,47 @@ td .u{direction:ltr;display:inline-block}
 .due-card.done .st{color:var(--good)}
 .route-block{margin-bottom:22px}
 
+/* Calendar */
+.cal-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-bar .yr{display:flex;align-items:center;gap:8px}
+.cal-bar .filters-row{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 300px;justify-content:flex-end}
+.cal-bar select{flex:1 1 140px;max-width:220px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-bottom:12px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:4px;vertical-align:middle;flex:none}
+.dot.done{background:var(--good)}.dot.missed{background:var(--action)}.dot.current{background:var(--plate)}.dot.future{background:var(--line)}
+.months{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:16px}
+.mtile{background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:10px 12px;cursor:pointer;text-align:start;display:grid;gap:6px}
+.mtile[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.mtile .mname{font-weight:700}
+.mtile.now .mname::after{content:" (الشهر ده)";color:var(--muted);font-weight:400;font-size:.8rem}
+.bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--bg)}
+.bar span{display:block;height:100%}
+.bar .done{background:var(--good)}.bar .missed{background:var(--action)}.bar .current{background:var(--plate)}.bar .future{background:var(--line)}
+.mnums{font-size:.8rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.month-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal-grid .wd{font-size:.75rem;color:var(--muted);text-align:center;padding:4px 0}
+.day{min-height:68px;background:var(--bg);border:1.5px solid transparent;border-radius:6px;padding:4px 5px;cursor:pointer;text-align:start;display:flex;flex-direction:column;gap:1px;min-width:0}
+.day .num{font-size:.8rem;font-weight:700}
+.day.today{border-color:var(--plate)}
+.day[aria-pressed="true"]{border-color:var(--ink)}
+.day.blank{background:transparent;cursor:default}
+.day .cnt{font-size:.72rem;font-weight:700;line-height:1.35;display:flex;align-items:center;gap:3px}
+.day .cnt .dot{width:7px;height:7px;margin:0}
+.task-list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.task{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;border-radius:6px;background:var(--bg);flex-wrap:wrap}
+.task .tag{direction:ltr;text-align:left;font-weight:700}
+.task .meta{color:var(--muted);font-size:.85rem}
+.task .side{display:flex;gap:8px;align-items:center}
+.chip.current{background:var(--monitor-bg);color:var(--monitor)}
+.chip.missed{background:var(--action-bg);color:var(--action)}
+.chip.done{background:var(--good-bg);color:var(--good)}
+.chip.future{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.alert{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--action-bg);color:var(--action);border:1.5px solid var(--action);border-radius:6px;padding:10px 14px;margin-bottom:14px;font-weight:500}
+.alert .btn{border-color:var(--action);background:var(--action);color:#fff}
+nav.tabs .badge{background:var(--action);color:#fff;margin-inline-start:6px}
+@media (max-width:480px){.day{min-height:58px;padding:3px}.day .cnt{font-size:.66rem}}
+
 /* Equipment admin */
 .route-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:20px 0 10px}
 .eq-row{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px}
@@ -251,6 +292,7 @@ td .u{direction:ltr;display:inline-block}
       </div>
       <nav class="tabs" role="tablist">
         <button role="tab" data-tab="home" aria-selected="true">الرئيسية</button>
+        <button role="tab" data-tab="calendar" aria-selected="false">التقويم<span class="badge" id="cal-badge" hidden></span></button>
         <button role="tab" data-tab="history" aria-selected="false">السجل</button>
         <button role="tab" data-tab="equipment" aria-selected="false" id="tab-eq-btn" hidden>المعدات</button>
         <button role="tab" data-tab="users" aria-selected="false" id="tab-users-btn" hidden>المستخدمين</button>
@@ -263,6 +305,10 @@ td .u{direction:ltr;display:inline-block}
     <!-- Dashboard + inspection -->
     <section id="tab-home" role="tabpanel">
       <div id="dash">
+        <div class="alert" id="overdue-banner" hidden role="status">
+          <span id="overdue-text"></span>
+          <button class="btn small" id="overdue-go" type="button">عرض المتأخر</button>
+        </div>
         <div class="freq-tabs" id="freq-tabs" role="tablist" aria-label="تكرار الفحص"></div>
         <div class="dash-head">
           <p id="dash-summary"></p>
@@ -283,6 +329,49 @@ td .u{direction:ltr;display:inline-block}
           <button class="btn" id="save" type="button" disabled>حفظ التفتيش</button>
         </div>
       </div>
+    </section>
+
+    <!-- Calendar -->
+    <section id="tab-calendar" role="tabpanel" hidden>
+      <div class="cal-bar">
+        <div class="yr">
+          <button class="icon-btn" id="cal-prev-y" type="button" aria-label="السنة اللي فاتت">→</button>
+          <h2 id="cal-year"></h2>
+          <button class="icon-btn" id="cal-next-y" type="button" aria-label="السنة الجاية">←</button>
+        </div>
+        <div class="filters-row">
+          <select class="inline" id="cal-route" aria-label="تصفية بالـ Route"><option value="">كل الـ Routes</option></select>
+          <select class="inline" id="cal-freq" aria-label="تصفية بالتكرار"><option value="">كل التكرارات</option></select>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="dot done"></i>اتعمل</span>
+        <span><i class="dot missed"></i>فات معاده ومتعملش</span>
+        <span><i class="dot current"></i>مطلوب دلوقتي</span>
+        <span><i class="dot future"></i>لسه جاي</span>
+      </div>
+      <div class="months" id="cal-months"></div>
+      <div class="card">
+        <div class="month-head">
+          <button class="icon-btn" id="cal-prev-m" type="button" aria-label="الشهر اللي فات">→</button>
+          <h3 id="cal-month-title"></h3>
+          <button class="icon-btn" id="cal-next-m" type="button" aria-label="الشهر الجاي">←</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <p class="hint" style="margin-top:8px">كل فحص بيظهر في آخر يوم في فترته (آخر يوم في الأسبوع أو الشهر...). دوس على أي يوم علشان تشوف تفاصيله.</p>
+      </div>
+      <div class="card" id="cal-day" hidden>
+        <h3 id="cal-day-title" style="margin-bottom:10px"></h3>
+        <ul class="task-list" id="cal-day-list"></ul>
+      </div>
+      <div class="card" id="cal-overdue">
+        <div class="section-head" style="margin-bottom:10px">
+          <h3>فات معادها ومتعملتش</h3>
+          <button class="btn ghost small" id="notif-btn" type="button" hidden>شغّل التنبيهات على الجهاز ده</button>
+        </div>
+        <ul class="task-list" id="overdue-list"></ul>
+      </div>
+      <button class="btn ghost small" id="cal-rebuild" type="button" hidden>إعادة بناء التقويم من السجل</button>
     </section>
 
     <!-- History -->
@@ -575,12 +664,15 @@ function enterApp() {
   $("#tab-eq-btn").hidden = profile.role !== "admin";
   $("#acc-info").innerHTML = `${esc(profile.name)}<br><span class="hint">اسم المستخدم: <code>${esc(profile.username)}</code></span>`;
   selectTab("home");
+  refreshOverdue();
+  setInterval(refreshOverdue, 30 * 60 * 1000);
 }
 
 document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => selectTab(b.dataset.tab)));
 function selectTab(name) {
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
-  for (const t of ["home", "history", "equipment", "users", "account"]) $("#tab-" + t).hidden = t !== name;
+  for (const t of ["home", "calendar", "history", "equipment", "users", "account"]) $("#tab-" + t).hidden = t !== name;
+  if (name === "calendar") openCalendar();
   if (name === "home" && !draft) loadData().then(renderDash);
   if (name === "equipment") { showEqList(); loadData().then(renderEqAdmin); }
   if (name === "history") loadHistory();
@@ -779,6 +871,12 @@ $("#save").addEventListener("click", async () => {
       await setDoc(doc(db, "status", `${draft.equipmentId}_${draft.freq}`), {
         equipmentId: draft.equipmentId, freq: draft.freq, lastAt: serverTimestamp(), lastBy: profile.name, lastInspectionId: ref.id });
     } catch (e) { console.warn("status", e); }
+    try {
+      const now = new Date(), key = `${draft.equipmentId}|${draft.freq}|${ymd(periodStart(draft.freq, now))}`;
+      await setDoc(doc(db, "calendar", ymd(now).slice(0, 7)),
+        { d: { [key]: { at: serverTimestamp(), by: profile.name, id: ref.id } }, updatedAt: serverTimestamp() }, { merge: true });
+      delete calCache[now.getFullYear()];
+    } catch (e) { console.warn("calendar", e); }
     let failed = 0, done = 0;
     for (const [k, it] of draft.items.entries()) {
       for (const data of it.photos) {
@@ -789,7 +887,7 @@ $("#save").addEventListener("click", async () => {
     }
     toast(failed ? `اتحفظ التفتيش، بس ${failed} صور ماترفعتش. اتأكد من النت.` : "اتحفظ التفتيش");
     draft = null; $("#fill").hidden = true; $("#dash").hidden = false; window.scrollTo(0, 0);
-    await loadData(); renderDash();
+    await loadData(); renderDash(); refreshOverdue();
   } catch (e) { toast(authMsg(e)); btn.disabled = false; }
   btn.textContent = "حفظ التفتيش";
 });
@@ -856,7 +954,9 @@ function renderHistory() {
       const ps = await getDocs(query(collection(db, "photos"), where("inspectionId", "==", id)));
       for (const p of ps.docs) await deleteDoc(p.ref);
       await deleteDoc(doc(db, "inspections", id));
-      await fixStatusAfterDelete(history.find(x => x.id === id)); history = history.filter(h => h.id !== id); renderHistory(); toast("اتحذف التفتيش"); }
+      const gone = history.find(x => x.id === id);
+      await fixStatusAfterDelete(gone);
+      if (gone?.createdAt?.toDate) { const d = gone.createdAt.toDate(); await rebuildMonth(d.getFullYear(), d.getMonth()).catch(() => {}); delete calCache[d.getFullYear()]; } history = history.filter(h => h.id !== id); renderHistory(); toast("اتحذف التفتيش"); }
     catch (e) { toast(authMsg(e)); }
   }));
 }
@@ -915,6 +1015,231 @@ $("#export").addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 });
 
+/* ---------------- Calendar ---------------- */
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const dayOnly = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const monthName = new Intl.DateTimeFormat("ar-EG-u-nu-latn", { month: "long" });
+const longDay = new Intl.DateTimeFormat("ar-EG-u-nu-latn", { weekday: "long", day: "numeric", month: "long" });
+const WEEKDAYS = ["سبت", "أحد", "اتنين", "تلات", "أربع", "خميس", "جمعة"];
+const ST_LABEL = { done: "اتعمل", missed: "فات معاده", current: "مطلوب دلوقتي", future: "لسه جاي" };
+
+function periodEnd(f, s) {
+  const y = s.getFullYear(), m = s.getMonth();
+  if (f === "daily") return s;
+  if (f === "weekly") return addDays(s, 6);
+  if (f === "monthly") return new Date(y, m + 1, 0);
+  if (f === "quarterly") return new Date(y, m + 3, 0);
+  if (f === "semiannual") return new Date(y, m + 6, 0);
+  return new Date(y, 11, 31);
+}
+
+let calCache = {}, calYear = new Date().getFullYear(), calMonth = new Date().getMonth(), calDay = null;
+
+// بيانات "اتعمل" بتتخزن في مستند واحد لكل شهر، علشان التقويم يتحمّل بقراءات قليلة
+async function loadCal(year) {
+  if (calCache[year]) return calCache[year];
+  const months = [`${year - 1}-12`, ...Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`)];
+  const snaps = await Promise.all(months.map(m => getDoc(doc(db, "calendar", m))));
+  const map = {};
+  snaps.forEach(s => { if (s.exists()) Object.assign(map, s.data().d || {}); });
+  return (calCache[year] = map);
+}
+
+function buildTasks(year, doneMap, route, freq) {
+  const from = new Date(year, 0, 1), to = new Date(year, 11, 31), today = dayOnly(new Date()), out = [];
+  for (const e of equipment) {
+    if (e.active === false) continue;
+    if (route && (e.route || "بدون Route") !== route) continue;
+    const startAt = (e.createdAt || e.updatedAt)?.toDate ? dayOnly((e.createdAt || e.updatedAt).toDate()) : null;
+    const freqs = [...new Set((e.items || []).map(i => i.freq))].filter(f => !freq || f === freq);
+    for (const f of freqs) {
+      for (let s = periodStart(f, from); s <= to; s = addDays(periodEnd(f, s), 1)) {
+        const end = periodEnd(f, s);
+        if (end > to || (startAt && end < startAt)) continue;
+        const rec = doneMap[`${e.id}|${f}|${ymd(s)}`];
+        const st = rec ? "done" : end < today ? "missed" : s <= today ? "current" : "future";
+        out.push({ e, f, s, end, rec, st, key: ymd(end) });
+      }
+    }
+  }
+  return out;
+}
+
+function countBy(tasks) {
+  const c = { done: 0, missed: 0, current: 0, future: 0 };
+  tasks.forEach(t => c[t.st]++);
+  return c;
+}
+
+async function openCalendar() {
+  $("#cal-freq").innerHTML = `<option value="">كل التكرارات</option>` + FREQS.map(f => `<option value="${f.id}" ${f.id === $("#cal-freq").value ? "selected" : ""}>${f.label}</option>`).join("");
+  $("#cal-rebuild").hidden = profile.role !== "admin";
+  $("#notif-btn").hidden = !("Notification" in window) || Notification.permission !== "default";
+  $("#cal-months").innerHTML = `<div class="empty">جاري التحميل...</div>`;
+  await loadData();
+  const keep = $("#cal-route").value;
+  $("#cal-route").innerHTML = `<option value="">كل الـ Routes</option>` + routesOf(equipment.filter(e => e.active !== false)).map(r => `<option ${r === keep ? "selected" : ""}>${esc(r)}</option>`).join("");
+  renderCalendar();
+}
+
+async function renderCalendar() {
+  $("#cal-year").textContent = calYear;
+  let map;
+  try { map = await loadCal(calYear); }
+  catch (e) { $("#cal-months").innerHTML = `<div class="empty">${esc(authMsg(e))}</div>`; return; }
+  const tasks = buildTasks(calYear, map, $("#cal-route").value, $("#cal-freq").value);
+  const now = new Date();
+
+  if (!equipment.some(e => e.active !== false)) {
+    $("#cal-months").innerHTML = `<div class="empty">لسه مفيش معدات، فالتقويم فاضي.</div>`;
+  } else {
+    $("#cal-months").innerHTML = Array.from({ length: 12 }, (_, m) => {
+      const c = countBy(tasks.filter(t => t.end.getMonth() === m)), total = c.done + c.missed + c.current + c.future;
+      const seg = k => total ? `<span class="${k}" style="width:${(c[k] / total) * 100}%"></span>` : "";
+      const isNow = calYear === now.getFullYear() && m === now.getMonth();
+      return `<button type="button" class="mtile ${isNow ? "now" : ""}" data-m="${m}" aria-pressed="${m === calMonth}">
+        <span class="mname">${monthName.format(new Date(calYear, m, 1))}</span>
+        <span class="bar">${seg("done")}${seg("missed")}${seg("current")}${seg("future")}</span>
+        <span class="mnums">${total ? `<span>✓ ${c.done}</span>${c.missed ? `<span style="color:var(--action)">✗ ${c.missed}</span>` : ""}${c.current ? `<span style="color:var(--monitor)">● ${c.current}</span>` : ""}${c.future ? `<span>${c.future} جاي</span>` : ""}` : "مفيش فحوصات"}</span>
+      </button>`;
+    }).join("");
+    $("#cal-months").querySelectorAll(".mtile").forEach(b => b.addEventListener("click", () => { calMonth = +b.dataset.m; calDay = null; renderCalendar(); }));
+  }
+
+  // شبكة الشهر (الأسبوع بيبدأ السبت)
+  $("#cal-month-title").textContent = `${monthName.format(new Date(calYear, calMonth, 1))} ${calYear}`;
+  const first = new Date(calYear, calMonth, 1), lead = (first.getDay() + 1) % 7, days = new Date(calYear, calMonth + 1, 0).getDate();
+  const byDay = {};
+  tasks.forEach(t => { if (t.end.getMonth() === calMonth) (byDay[t.key] ||= []).push(t); });
+  const todayKey = ymd(now);
+  let cells = WEEKDAYS.map(w => `<div class="wd">${w}</div>`).join("") + `<div class="day blank"></div>`.repeat(lead);
+  for (let d = 1; d <= days; d++) {
+    const key = ymd(new Date(calYear, calMonth, d)), c = countBy(byDay[key] || []);
+    const line = k => c[k] ? `<span class="cnt"><i class="dot ${k}"></i>${c[k]}</span>` : "";
+    cells += `<button type="button" class="day ${key === todayKey ? "today" : ""}" data-k="${key}" aria-pressed="${key === calDay}"
+      aria-label="${longDay.format(new Date(calYear, calMonth, d))}"><span class="num">${d}</span>${line("missed")}${line("current")}${line("done")}${line("future")}</button>`;
+  }
+  $("#cal-grid").innerHTML = cells;
+  $("#cal-grid").querySelectorAll(".day[data-k]").forEach(b => b.addEventListener("click", () => { calDay = b.dataset.k; renderCalendar(); }));
+
+  // تفاصيل اليوم
+  const dayTasks = calDay ? (byDay[calDay] || []) : [];
+  $("#cal-day").hidden = !calDay;
+  if (calDay) {
+    const [y, m, d] = calDay.split("-").map(Number);
+    $("#cal-day-title").textContent = longDay.format(new Date(y, m - 1, d));
+    const order = { missed: 0, current: 1, done: 2, future: 3 };
+    $("#cal-day-list").innerHTML = dayTasks.length ? dayTasks.sort((a, b) => order[a.st] - order[b.st]).map(t => taskRow(t)).join("")
+      : `<li class="empty">مفيش فحوصات معادها اليوم ده.</li>`;
+    bindTaskRows($("#cal-day-list"));
+  }
+
+  // المتأخر (حسب الفلاتر)
+  renderOverdueList(tasks.filter(t => t.st === "missed"));
+}
+
+function taskRow(t) {
+  const period = t.f === "daily" ? dayFmt.format(t.s) : `${dayFmt.format(t.s)} لحد ${dayFmt.format(t.end)}`;
+  const done = t.rec?.at?.toDate ? ` ${dayFmt.format(t.rec.at.toDate())}، ${esc(t.rec.by)}` : "";
+  return `<li class="task">
+    <div><div class="tag">${esc(t.e.tag)}</div><div class="meta">${esc(FREQ_LABEL[t.f])}، ${esc(t.e.route || "بدون Route")}، الفترة: ${period}</div></div>
+    <div class="side"><span class="chip ${t.st}">${ST_LABEL[t.st]}${t.st === "done" ? done : ""}</span>
+      ${t.st === "current" ? `<button class="btn small go" type="button" data-id="${esc(t.e.id)}" data-f="${t.f}">ابدأ الفحص</button>` : ""}</div>
+  </li>`;
+}
+function bindTaskRows(root) {
+  root.querySelectorAll(".go").forEach(b => b.addEventListener("click", () => { startDraft(b.dataset.id, b.dataset.f); selectTab("home"); }));
+}
+
+function groupMissed(missed) {
+  const g = {};
+  missed.forEach(t => {
+    const k = `${t.e.id}|${t.f}`;
+    (g[k] ||= { e: t.e, f: t.f, n: 0, last: t.end }).n++;
+    if (t.end > g[k].last) g[k].last = t.end;
+  });
+  return Object.values(g).sort((a, b) => b.last - a.last);
+}
+
+function renderOverdueList(missed) {
+  const groups = groupMissed(missed);
+  $("#overdue-list").innerHTML = groups.length ? groups.map(x => {
+    const cur = isDone(x.e, x.f);
+    return `<li class="task">
+      <div><div class="tag">${esc(x.e.tag)}</div><div class="meta">${esc(FREQ_LABEL[x.f])}، ${esc(x.e.route || "بدون Route")}، فات ${x.n} ${x.n === 1 ? "مرة" : "مرات"}، آخرها ${dayFmt.format(x.last)}</div></div>
+      <div class="side">${cur ? `<span class="chip done">الفترة الحالية اتعملت</span>` : `<button class="btn small go" type="button" data-id="${esc(x.e.id)}" data-f="${x.f}">افحصها دلوقتي</button>`}</div>
+    </li>`;
+  }).join("") : `<li class="empty">مفيش حاجة فات معادها. كله تمام.</li>`;
+  bindTaskRows($("#overdue-list"));
+}
+
+// التنبيهات: شريط في الرئيسية + رقم على تبويب التقويم + إشعار على الجهاز مرة في اليوم
+async function refreshOverdue() {
+  try {
+    if (!equipment.length) await loadData();
+    const y = new Date().getFullYear();
+    const missed = buildTasks(y, await loadCal(y), "", "").filter(t => t.st === "missed");
+    const groups = groupMissed(missed).filter(x => !isDone(x.e, x.f));
+    const n = groups.length;
+    $("#cal-badge").hidden = !n; $("#cal-badge").textContent = n;
+    $("#overdue-banner").hidden = !n;
+    if (n) {
+      $("#overdue-text").textContent = `فيه ${n} ${n === 1 ? "فحص" : "فحوصات"} فات معادها ومتعملتش: ${groups.slice(0, 3).map(x => `${x.e.tag} (${FREQ_LABEL[x.f]})`).join("، ")}${n > 3 ? "..." : ""}`;
+      deviceNotify(n, groups);
+    }
+  } catch (e) { console.warn("overdue", e); }
+}
+
+function deviceNotify(n, groups) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  const k = "mi-notified-" + ymd(new Date());
+  try { if (localStorage.getItem(k)) return; } catch {}
+  try {
+    new Notification("دليل الفحص الميكانيكي", { body: `فيه ${n} فحوصات فات معادها: ${groups.slice(0, 3).map(x => x.e.tag).join("، ")}`, tag: "overdue", lang: "ar", dir: "rtl" });
+    try { localStorage.setItem(k, "1"); } catch {}
+  } catch {}
+}
+
+$("#notif-btn").addEventListener("click", async () => {
+  try {
+    const p = await Notification.requestPermission();
+    $("#notif-btn").hidden = true;
+    toast(p === "granted" ? "التنبيهات اشتغلت على الجهاز ده" : "التنبيهات مقفولة. تقدر تفتحها من إعدادات المتصفح.");
+    if (p === "granted") { try { localStorage.removeItem("mi-notified-" + ymd(new Date())); } catch {} refreshOverdue(); }
+  } catch { toast("المتصفح ده مش بيدعم التنبيهات."); }
+});
+
+$("#overdue-go").addEventListener("click", () => { selectTab("calendar"); setTimeout(() => $("#cal-overdue").scrollIntoView({ behavior: "smooth" }), 400); });
+$("#cal-route").addEventListener("change", () => { calDay = null; renderCalendar(); });
+$("#cal-freq").addEventListener("change", () => { calDay = null; renderCalendar(); });
+$("#cal-prev-y").addEventListener("click", () => { calYear--; calDay = null; renderCalendar(); });
+$("#cal-next-y").addEventListener("click", () => { calYear++; calDay = null; renderCalendar(); });
+$("#cal-prev-m").addEventListener("click", () => { if (--calMonth < 0) { calMonth = 11; calYear--; } calDay = null; renderCalendar(); });
+$("#cal-next-m").addEventListener("click", () => { if (++calMonth > 11) { calMonth = 0; calYear++; } calDay = null; renderCalendar(); });
+
+async function rebuildMonth(y, m) {
+  const snap = await getDocs(query(collection(db, "inspections"), where("createdAt", ">=", new Date(y, m, 1)), where("createdAt", "<", new Date(y, m + 1, 1))));
+  const d = {};
+  snap.docs.forEach(s => {
+    const x = s.data();
+    if (!x.equipmentId || !x.freq || !x.createdAt?.toDate) return;
+    const key = `${x.equipmentId}|${x.freq}|${ymd(periodStart(x.freq, x.createdAt.toDate()))}`;
+    if (!d[key] || d[key].at.toMillis() < x.createdAt.toMillis()) d[key] = { at: x.createdAt, by: x.inspectorName, id: s.id };
+  });
+  await setDoc(doc(db, "calendar", `${y}-${String(m + 1).padStart(2, "0")}`), { d, updatedAt: serverTimestamp() });
+}
+
+$("#cal-rebuild").addEventListener("click", async () => {
+  if (!confirm(`هيتعاد حساب تقويم سنة ${calYear} من سجل التفتيشات. تكمل؟`)) return;
+  const btn = $("#cal-rebuild"); btn.disabled = true;
+  try {
+    for (let m = 0; m < 12; m++) { btn.textContent = `جاري إعادة البناء ${m + 1} من 12...`; await rebuildMonth(calYear, m); }
+    delete calCache[calYear]; toast("اتعاد بناء التقويم"); renderCalendar(); refreshOverdue();
+  } catch (e) { toast(authMsg(e)); }
+  btn.disabled = false; btn.textContent = "إعادة بناء التقويم من السجل";
+});
+
 /* ---------------- Equipment (admin) ---------------- */
 let edit = null;
 
@@ -960,7 +1285,7 @@ $("#imp-btn").addEventListener("click", async () => {
   try {
     const batch = writeBatch(db);
     SEED.forEach((e, i) => batch.set(doc(collection(db, "equipment")), {
-      tag: e.tag, route: e.area, items: e.items.map(text => ({ text, freq: f })), active: true, order: i, updatedAt: serverTimestamp() }));
+      tag: e.tag, route: e.area, items: e.items.map(text => ({ text, freq: f })), active: true, order: i, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
     await batch.commit();
     toast("اتستوردت القائمة الأساسية");
     await loadData(); renderEqAdmin();
@@ -971,7 +1296,7 @@ $("#imp-btn").addEventListener("click", async () => {
 $("#eq-add").addEventListener("click", () => openEditor(null));
 
 function openEditor(e) {
-  edit = e ? { id: e.id, order: e.order ?? 0, items: (e.items || []).map(i => ({ ...i })) } : { id: null, order: null, items: [{ text: "", freq: "monthly" }] };
+  edit = e ? { id: e.id, order: e.order ?? 0, createdAt: e.createdAt || e.updatedAt || null, items: (e.items || []).map(i => ({ ...i })) } : { id: null, order: null, items: [{ text: "", freq: "monthly" }] };
   $("#ed-title").textContent = e ? `تعديل ${e.tag}` : "إضافة معدة";
   $("#ed-tag").value = e?.tag || "";
   $("#ed-route").value = e?.route || "";
@@ -1030,13 +1355,13 @@ $("#ed-save").addEventListener("click", async () => {
   if (equipment.some(e => e.id !== edit.id && e.tag.toLowerCase() === tag.toLowerCase())) return (err.textContent = "فيه معدة بنفس الاسم ده. اختار اسم تاني.");
   err.textContent = "";
   const btn = $("#ed-save"); btn.disabled = true;
-  const data = { tag, route, items, active: $("#ed-active").checked, updatedAt: serverTimestamp(),
+  const data = { tag, route, items, active: $("#ed-active").checked, updatedAt: serverTimestamp(), createdAt: edit.createdAt || serverTimestamp(),
     order: edit.order ?? (Math.max(-1, ...equipment.map(e => e.order ?? 0)) + 1) };
   try {
     if (edit.id) await setDoc(doc(db, "equipment", edit.id), data);
     else await addDoc(collection(db, "equipment"), data);
     toast("اتحفظت المعدة");
-    showEqList(); await loadData(); renderEqAdmin();
+    showEqList(); await loadData(); renderEqAdmin(); refreshOverdue();
   } catch (e) { err.textContent = authMsg(e); }
   btn.disabled = false;
 });
