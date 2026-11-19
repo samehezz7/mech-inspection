@@ -234,7 +234,23 @@ nav.tabs .badge{background:var(--action);color:#fff;margin-inline-start:6px}
 details[open]>summary .caret{transform:rotate(-90deg)}
 .area-node>summary .aname{font-size:1.125rem;font-weight:700}
 .node-meta{color:var(--muted);font-size:.85rem;margin-inline-start:auto;text-align:end}
-.node-actions{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 12px}
+.node-actions{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 12px;align-items:center}
+.more{position:relative}
+.more>summary{list-style:none}
+.more>summary::-webkit-details-marker{display:none}
+.more-menu{position:absolute;top:calc(100% + 4px);inset-inline-start:0;z-index:6;background:var(--panel);border:1.5px solid var(--line);border-radius:8px;padding:6px;display:grid;gap:4px;min-width:190px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.more-menu .btn{width:100%;text-align:start;border-color:transparent}
+.more-menu .btn:hover{border-color:var(--line)}
+dialog.dlg{border:1.5px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
+dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
+.dlg-body{padding:20px;display:grid;gap:12px}
+.dlg-body h2{font-size:1.25rem}
+.dlg-body select,.dlg-body input[type=text],.dlg-body input:not([type]){background:var(--bg);border:1.5px solid var(--line);border-radius:6px;padding:10px 12px;min-height:44px;width:100%}
+.dlg-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.preview{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px 12px;max-height:240px;overflow:auto;font-size:.9rem}
+.preview ul{margin:4px 0;padding-inline-start:18px}
+.preview .ltr{direction:ltr;unicode-bidi:plaintext}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap}
 .node-actions .icon-btn{min-width:40px;min-height:40px}
 @media (max-width:480px){.node-actions .btn.small{padding:4px 10px}.node-actions .icon-btn{min-width:36px}}
 .children{margin:0 16px 14px;padding-inline-start:14px;border-inline-start:2px dashed var(--line);display:grid;gap:8px}
@@ -443,7 +459,10 @@ details[open]>summary .caret{transform:rotate(-90deg)}
       <div id="eq-list-view">
         <div class="section-head">
           <span></span>
-          <button class="btn small" id="area-add" type="button">إضافة قسم رئيسي</button>
+          <div class="top-actions">
+            <button class="btn small" id="area-add" type="button">إضافة قسم رئيسي</button>
+            <button class="btn ghost small" id="xl-root" type="button">استيراد من Excel</button>
+          </div>
         </div>
         <div class="card" id="eq-import" hidden>
           <h3 style="margin-bottom:8px">مفيش معدات لسه</h3>
@@ -531,6 +550,7 @@ details[open]>summary .caret{transform:rotate(-90deg)}
 </div>
 
 <div class="lightbox" id="lightbox" hidden><button type="button" id="lb-close">إغلاق</button><img id="lb-img" alt="صورة البند"></div>
+<dialog class="dlg" id="dlg"><div class="dlg-body" id="dlg-body"></div></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script type="module">
@@ -1402,10 +1422,14 @@ function areaNode(a, idx, n) {
     <div class="node-actions">
       <button class="btn small add-eq" type="button">إضافة معدة</button>
       <button class="btn ghost small add-sub" type="button">إضافة معدة فرعية</button>
-      <button class="btn ghost small ren-area" type="button">تغيير الاسم</button>
       <button class="icon-btn area-up" type="button" ${idx === 0 ? "disabled" : ""} aria-label="طلّع ${esc(a.name)} لفوق">↑</button>
       <button class="icon-btn area-down" type="button" ${idx === n - 1 ? "disabled" : ""} aria-label="نزّل ${esc(a.name)} لتحت">↓</button>
-      ${subs.length || eqs.length ? "" : `<button class="btn danger small del-area" type="button">حذف</button>`}
+      <details class="more"><summary class="btn ghost small">المزيد ▾</summary><div class="more-menu">
+        <button class="btn ghost small ren-area" type="button">تغيير الاسم</button>
+        <button class="btn ghost small copy-area" type="button">نسخ بكل اللي تحتها</button>
+        <button class="btn ghost small xl-area" type="button">استيراد Excel هنا</button>
+        ${subs.length || eqs.length ? "" : `<button class="btn danger small del-area" type="button">حذف</button>`}
+      </div></details>
     </div>
     <div class="children">
       ${subs.map((s, i) => areaNode(s, i, subs.length)).join("")}
@@ -1423,7 +1447,11 @@ function eqNode(e, ei, n) {
     <div class="node-actions">
       <button class="btn small add-part-btn" type="button">إضافة Part</button>
       <button class="btn ghost small add-subeq" type="button">إضافة معدة فرعية</button>
-      <button class="btn ghost small edit" type="button">تعديل المعدة</button>
+      <details class="more"><summary class="btn ghost small">المزيد ▾</summary><div class="more-menu">
+        <button class="btn ghost small edit" type="button">تعديل المعدة</button>
+        <button class="btn ghost small copy-eq" type="button">نسخ بكل اللي تحتها</button>
+        <button class="btn ghost small parts-from" type="button">نسخ Parts من معدة تانية</button>
+      </div></details>
       <button class="icon-btn eq-up" type="button" ${ei === 0 ? "disabled" : ""} aria-label="طلّع ${esc(e.tag)} لفوق">↑</button>
       <button class="icon-btn eq-down" type="button" ${ei === n - 1 ? "disabled" : ""} aria-label="نزّل ${esc(e.tag)} لتحت">↓</button>
     </div>
@@ -1467,6 +1495,8 @@ function bindTree() {
     acts.querySelector(".add-eq").addEventListener("click", () => openEditor(null, a.id));
     acts.querySelector(".add-sub").addEventListener("click", () => addArea(a.id));
     acts.querySelector(".ren-area").addEventListener("click", () => renameArea(a));
+    acts.querySelector(".copy-area").addEventListener("click", () => copyDialog("area", a));
+    acts.querySelector(".xl-area").addEventListener("click", () => excelDialog(a.id));
     acts.querySelector(".area-up").addEventListener("click", () => swapOrder("areas", a, sibs[ai - 1]));
     acts.querySelector(".area-down").addEventListener("click", () => swapOrder("areas", a, sibs[ai + 1]));
     acts.querySelector(".del-area")?.addEventListener("click", async () => {
@@ -1489,6 +1519,8 @@ function bindTree() {
       saveItems(e, [...(e.items || []), { text, freq: form.querySelector(".ap-freq").value }], `اتضاف ${text}`);
     });
     acts.querySelector(".edit").addEventListener("click", () => openEditor(e));
+    acts.querySelector(".copy-eq").addEventListener("click", () => copyDialog("eq", e));
+    acts.querySelector(".parts-from").addEventListener("click", () => partsFromDialog(e));
     acts.querySelector(".eq-up").addEventListener("click", () => swapOrder("equipment", e, sibs[ei - 1]));
     acts.querySelector(".eq-down").addEventListener("click", () => swapOrder("equipment", e, sibs[ei + 1]));
     node.querySelectorAll(":scope > .parts > .part").forEach(li => {
@@ -1611,7 +1643,7 @@ $("#ed-save").addEventListener("click", async () => {
   const items = edit.items.map(i => ({ text: i.text.trim(), freq: i.freq })).filter(i => i.text);
   if (!tag) return (err.textContent = "اكتب اسم أو كود المعدة.");
   if (!areaId) return (err.textContent = "اختار الـ Area.");
-  if (equipment.some(e => e.id !== edit.id && e.tag.toLowerCase() === tag.toLowerCase())) return (err.textContent = "فيه معدة بنفس الاسم ده. اختار اسم تاني.");
+  if (equipment.some(e => e.id !== edit.id && e.areaId === areaId && (e.parentEqId || "") === (edit.parentEqId || "") && e.tag.toLowerCase() === tag.toLowerCase())) return (err.textContent = "فيه معدة بنفس الاسم في نفس المكان. اختار اسم تاني.");
   err.textContent = "";
   const btn = $("#ed-save"); btn.disabled = true;
   const parentEq = edit.parentEqId ? eqById(edit.parentEqId) : null;
@@ -1645,6 +1677,267 @@ $("#ed-delete").addEventListener("click", async () => {
     showEqList(); await loadData(); renderEqAdmin();
   } catch (e) { toast(authMsg(e)); }
 });
+
+/* ---------------- Copy & Excel import ---------------- */
+// close "المزيد" menus when clicking elsewhere
+document.addEventListener("click", ev => {
+  document.querySelectorAll("details.more[open]").forEach(d => { if (!d.contains(ev.target) || ev.target.closest(".more-menu .btn")) d.open = false; });
+});
+
+const dlg = $("#dlg");
+function openDlg(html) { $("#dlg-body").innerHTML = html; dlg.showModal(); }
+function closeDlg() { dlg.close(); }
+dlg.addEventListener("click", ev => { if (ev.target === dlg) closeDlg(); });
+
+function areaSelectHtml(id, sel, withRoot) {
+  return `<select id="${id}">${withRoot ? `<option value="" ${!sel ? "selected" : ""}>قسم رئيسي (فوق خالص)</option>` : ""}${
+    areaFlat.map(({ a, depth }) => `<option value="${esc(a.id)}" ${a.id === sel ? "selected" : ""}>${indent(depth)}${esc(a.name)}</option>`).join("")}</select>`;
+}
+
+// كتابة على دفعات (Firestore بيقبل 500 عملية في الدفعة)
+async function commitOps(ops) {
+  for (let i = 0; i < ops.length; i += 450) {
+    const b = writeBatch(db);
+    ops.slice(i, i + 450).forEach(([ref, data]) => b.set(ref, data));
+    await b.commit();
+  }
+}
+
+function copyDialog(kind, src) {
+  const name = kind === "area" ? src.name : src.tag;
+  openDlg(`<h2>نسخ ${esc(name)}</h2>
+    <p class="hint">${kind === "area" ? "هيتنسخ كل اللي تحتها: المعدات والمعدات الفرعية والـ Parts بتكراراتها." : "هيتنسخ معاها المعدات الفرعية والـ Parts بتكراراتها."} التفتيشات القديمة مش بتتنسخ.</p>
+    <div class="field"><label for="cp-name">الاسم الجديد</label><input id="cp-name" dir="auto" maxlength="80" value="${esc(name)} (2)"></div>
+    <div class="field"><label for="cp-dest">هيتحط تحت</label>${areaSelectHtml("cp-dest", kind === "area" ? pid(src) : src.areaId, kind === "area")}</div>
+    ${kind === "eq" && src.parentEqId ? `<p class="hint">ملحوظة: النسخة هتبقى معدة مستقلة في المكان اللي تختاره، مش تحت ${esc(eqParent(src)?.tag || "")}.</p>` : ""}
+    <p class="err" id="cp-err" role="alert"></p>
+    <div class="dlg-actions"><button class="btn ghost" type="button" id="cp-cancel">إلغاء</button><button class="btn" type="button" id="cp-go">نسخ</button></div>`);
+  $("#cp-name").select();
+  $("#cp-cancel").addEventListener("click", closeDlg);
+  $("#cp-go").addEventListener("click", async () => {
+    const newName = $("#cp-name").value.trim().slice(0, 80), dest = $("#cp-dest").value, err = $("#cp-err");
+    if (!newName) return (err.textContent = "اكتب اسم.");
+    if (kind === "area" && kids(dest).some(x => x.name.toLowerCase() === newName.toLowerCase())) return (err.textContent = "فيه واحدة بنفس الاسم في المكان ده.");
+    if (kind === "area" && subtreeIds(src.id).has(dest)) return (err.textContent = "مينفعش تنسخها جوه نفسها.");
+    if (kind === "eq" && equipment.some(x => x.areaId === dest && !x.parentEqId && x.tag.toLowerCase() === newName.toLowerCase())) return (err.textContent = "فيه معدة بنفس الاسم في المكان ده.");
+    $("#cp-go").disabled = true; $("#cp-go").textContent = "جاري النسخ...";
+    try {
+      const ops = [], now = serverTimestamp();
+      const copyEq = (e, areaId, parentEqId, tag) => {
+        const ref = doc(collection(db, "equipment"));
+        ops.push([ref, { tag, route: "", areaId, parentEqId, items: (e.items || []).map(i => ({ text: i.text, freq: i.freq })), active: e.active !== false, order: e.order ?? 0, createdAt: now, updatedAt: now }]);
+        eqKids(e).forEach(k => copyEq(k, areaId, ref.id, k.tag));
+      };
+      let openId;
+      if (kind === "eq") {
+        copyEq(src, dest, "", newName);
+        openAreas.add(dest);
+      } else {
+        const copyArea = (a, parentId, nm, order) => {
+          const ref = doc(collection(db, "areas"));
+          ops.push([ref, { name: nm, parentId, order, createdAt: now, updatedAt: now }]);
+          equipment.filter(e => e.areaId === a.id && !eqParent(e)).forEach(e => copyEq(e, ref.id, "", e.tag));
+          kids(a.id).forEach(k => copyArea(k, ref.id, k.name, k.order ?? 0));
+          return ref.id;
+        };
+        openId = copyArea(src, dest, newName, Math.max(-1, ...kids(dest).map(x => x.order ?? 0)) + 1);
+        openAreas.add(openId); if (dest) openAreas.add(dest);
+      }
+      await commitOps(ops);
+      await loadData(); await fixRoutes(); closeDlg();
+      toast(`اتنسخت ${newName}: ${ops.length} عنصر`); renderEqAdmin(); refreshOverdue();
+    } catch (e) { err.textContent = authMsg(e); $("#cp-go").disabled = false; $("#cp-go").textContent = "نسخ"; }
+  });
+}
+
+// نحدّث نص المكان (route) لأي معدة نصها مش مظبوط، بعد النسخ أو الاستيراد
+async function fixRoutes() {
+  const ops = equipment.filter(e => e.route !== areaName(e).slice(0, 80)).map(e => [doc(db, "equipment", e.id), { route: areaName(e).slice(0, 80), updatedAt: serverTimestamp() }]);
+  for (let i = 0; i < ops.length; i += 450) {
+    const b = writeBatch(db); ops.slice(i, i + 450).forEach(([r, d]) => b.update(r, d)); await b.commit();
+  }
+  if (ops.length) await loadData();
+}
+
+function partsFromDialog(target) {
+  const others = equipment.filter(x => x.id !== target.id && (x.items || []).length);
+  if (!others.length) return toast("مفيش معدات تانية فيها Parts.");
+  openDlg(`<h2>نسخ Parts لـ ${esc(target.tag)}</h2>
+    <div class="field"><label for="pf-src">انسخ من</label><select id="pf-src">${others.map(x => `<option value="${esc(x.id)}">${esc(areaName(x))} / ${esc(x.tag)} (${x.items.length})</option>`).join("")}</select></div>
+    <div class="preview" id="pf-prev"></div>
+    <p class="hint">الـ Parts اللي موجودة بنفس الاسم في ${esc(target.tag)} مش هتتكرر.</p>
+    <div class="dlg-actions"><button class="btn ghost" type="button" id="pf-cancel">إلغاء</button><button class="btn" type="button" id="pf-go">نسخ الـ Parts</button></div>`);
+  const prev = () => { const s = eqById($("#pf-src").value); $("#pf-prev").innerHTML = `<ul>${s.items.map(i => `<li><span class="ltr">${esc(i.text)}</span>، ${FREQ_LABEL[i.freq]}</li>`).join("")}</ul>`; };
+  prev(); $("#pf-src").addEventListener("change", prev);
+  $("#pf-cancel").addEventListener("click", closeDlg);
+  $("#pf-go").addEventListener("click", async () => {
+    const s = eqById($("#pf-src").value), have = new Set((target.items || []).map(i => i.text.toLowerCase()));
+    const add = s.items.filter(i => !have.has(i.text.toLowerCase())).map(i => ({ text: i.text, freq: i.freq }));
+    closeDlg(); openEqs.add(target.id);
+    if (!add.length) return toast("كل الـ Parts موجودة أصلًا.");
+    saveItems(target, [...(target.items || []), ...add], `اتضاف ${add.length} Parts`);
+  });
+}
+
+/* ---- Excel ---- */
+let xlsxLib = null;
+function loadXlsx() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  return xlsxLib ||= new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = () => res(window.XLSX); s.onerror = () => { xlsxLib = null; rej(new Error("xlsx")); };
+    document.head.appendChild(s);
+  });
+}
+function parseFreq(v) {
+  const s = String(v || "").trim().toLowerCase();
+  if (!s) return null;
+  if (/daily|يومي|^d$|يوميا/.test(s)) return "daily";
+  if (/week|أسبوع|اسبوع|^w$/.test(s)) return "weekly";
+  if (/semi|6\s*month|6 شهور|ستة|نص سنوي|نصف سنوي/.test(s)) return "semiannual";
+  if (/quarter|3\s*month|3 شهور|ربع|تلات شهور|ثلاث/.test(s)) return "quarterly";
+  if (/year|annual|سنوي|^y$/.test(s)) return "yearly";
+  if (/month|شهري|^m$/.test(s)) return "monthly";
+  return null;
+}
+const HEADER_RE = /area|equipment|item|part|freq|route|section|تكرار|معدة|معدات|بند|بنود|منطقة|قسم/i;
+
+function parseSheet(rows) {
+  rows = rows.map(r => r.map(c => String(c ?? "").replace(/\s+/g, " ").trim()));
+  rows = rows.filter(r => r.some(Boolean));
+  if (!rows.length) return { error: "الملف فاضي." };
+  let header = null;
+  if (rows[0].some(c => HEADER_RE.test(c)) && rows[0].filter(Boolean).length >= 2) header = rows.shift();
+  const width = Math.max(...rows.map(r => r.length), header ? header.length : 0);
+  const used = [...Array(width).keys()].filter(c => rows.some(r => r[c]));
+  // عمود التكرار: بالعنوان أو بالقيم
+  let fcol = header ? used.find(c => /freq|تكرار|route/i.test(header[c] || "")) : undefined;
+  if (fcol === undefined) fcol = used.find(c => { const v = rows.map(r => r[c]).filter(Boolean); return v.length && v.filter(x => parseFreq(x)).length / v.length >= 0.6; });
+  const cols = used.filter(c => c !== fcol);
+  if (cols.length < 2) return { error: "الملف لازم يبقى فيه عمود للمعدة وعمود للـ Part على الأقل." };
+  const partCol = cols[cols.length - 1], hier = cols.slice(0, -1);
+  const cur = hier.map(() => ""), out = [];
+  let skipped = 0;
+  for (const r of rows) {
+    let changedAt = -1;
+    hier.forEach((c, i) => { if (r[c]) { if (changedAt < 0 && r[c] !== cur[i]) changedAt = i; cur[i] = r[c]; } else if (changedAt >= 0 && i > changedAt) cur[i] = ""; });
+    const part = r[partCol];
+    if (!part) continue;
+    if (cur.some(x => !x)) { skipped++; continue; }
+    out.push({ path: [...cur], part, freq: fcol !== undefined ? parseFreq(r[fcol]) : null });
+  }
+  return { rows: out, levels: hier.length, skipped, headers: header ? cols.map(c => header[c]) : null };
+}
+
+function excelDialog(targetId) {
+  const t = areaById(targetId);
+  openDlg(`<h2>استيراد من Excel${t ? ` تحت ${esc(t.name)}` : ""}</h2>
+    <p class="hint">كل صف = Part. الأعمدة من الشمال لليمين: الـ Areas (أي عدد أعمدة)، وبعدها المعدة، وبعدها الـ Part، وعمود اختياري للتكرار (يومي، أسبوعي، شهري، كل 3 شهور، كل 6 شهور، سنوي). الخانات المدموجة أو الفاضية بتاخد القيمة اللي فوقها. ملف زي Schedule For CMs Inspection بيشتغل زي ما هو.</p>
+    <div class="field"><label for="xl-dest">هيتحط تحت</label>${areaSelectHtml("xl-dest", targetId || "", true)}</div>
+    <div class="field"><label for="xl-freq">التكرار للـ Parts اللي مالهاش تكرار في الملف</label><select id="xl-freq">${freqOptions("monthly")}</select></div>
+    <div class="field"><label for="xl-file">ملف Excel</label><input type="file" id="xl-file" accept=".xlsx,.xls,.csv"></div>
+    <div class="preview" id="xl-prev" hidden></div>
+    <p class="err" id="xl-err" role="alert"></p>
+    <div class="dlg-actions">
+      <button class="btn ghost small" type="button" id="xl-tpl">تنزيل نموذج فاضي</button>
+      <span style="flex:1"></span>
+      <button class="btn ghost" type="button" id="xl-cancel">إلغاء</button>
+      <button class="btn" type="button" id="xl-go" disabled>استيراد</button>
+    </div>`);
+  let parsed = null;
+  const err = $("#xl-err"), prevBox = $("#xl-prev"), go = $("#xl-go");
+  $("#xl-cancel").addEventListener("click", closeDlg);
+  $("#xl-tpl").addEventListener("click", async () => {
+    try {
+      const X = await loadXlsx();
+      const ws = X.utils.aoa_to_sheet([["Area", "Sub Area", "Equipment", "Part", "Frequency"],
+        ["CM1", "Ball Mill", "East Main Drive", "H.S Coupling", "يومي"], ["", "", "", "L.S Coupling", "يومي"], ["", "", "", "Main Gearbox", "شهري"],
+        ["", "Separator", "Separator Drive", "Motor Bearings", "أسبوعي"]]);
+      ws["!cols"] = [{ wch: 16 }, { wch: 16 }, { wch: 24 }, { wch: 36 }, { wch: 12 }];
+      const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, "Structure"); X.writeFile(wb, "inspection-structure-template.xlsx");
+    } catch { toast("مش قادر أحمّل أداة Excel. اتأكد من النت."); }
+  });
+  const preview = () => {
+    if (!parsed) return;
+    const dest = $("#xl-dest").value, df = $("#xl-freq").value, plan = planImport(parsed.rows, dest, df);
+    prevBox.hidden = false;
+    prevBox.innerHTML = `<strong>هيتعمل:</strong> ${plan.newAreas} Areas جديدة، ${plan.newEq} معدات جديدة، ${plan.newParts} Parts جديدة${plan.mergedEq ? `، وهيتضاف على ${plan.mergedEq} معدات موجودة` : ""}${plan.dupParts ? `. ${plan.dupParts} Parts موجودة أصلًا هتتساب` : ""}${parsed.skipped ? `. ${parsed.skipped} صفوف ناقصة هتتساب` : ""}.
+      <ul>${plan.sample.map(s => `<li class="ltr">${esc(s)}</li>`).join("")}${plan.more ? `<li>و${plan.more} كمان...</li>` : ""}</ul>`;
+    go.disabled = !(plan.newAreas + plan.newEq + plan.newParts);
+  };
+  $("#xl-dest").addEventListener("change", preview);
+  $("#xl-freq").addEventListener("change", preview);
+  $("#xl-file").addEventListener("change", async ev => {
+    err.textContent = ""; parsed = null; prevBox.hidden = true; go.disabled = true;
+    const f = ev.target.files[0]; if (!f) return;
+    try {
+      const X = await loadXlsx();
+      const wb = X.read(await f.arrayBuffer(), { type: "array" });
+      const rows = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "", blankrows: false });
+      const r = parseSheet(rows);
+      if (r.error) return (err.textContent = r.error);
+      if (!r.rows.length) return (err.textContent = "مالقيتش Parts في الملف.");
+      parsed = r; preview();
+    } catch { err.textContent = "مش قادر أقرا الملف ده. اتأكد إنه Excel وإن النت شغال."; }
+  });
+  go.addEventListener("click", async () => {
+    go.disabled = true; go.textContent = "جاري الاستيراد...";
+    try {
+      const plan = planImport(parsed.rows, $("#xl-dest").value, $("#xl-freq").value, true);
+      await commitOps(plan.ops);
+      for (const [ref, items] of plan.updates) await updateDoc(ref, { items, updatedAt: serverTimestamp() });
+      plan.openIds.forEach(id => openAreas.add(id));
+      await loadData(); await fixRoutes(); closeDlg();
+      toast(`اتستورد: ${plan.newEq} معدات، ${plan.newParts} Parts`); renderEqAdmin(); refreshOverdue();
+    } catch (e) { err.textContent = authMsg(e); go.disabled = false; go.textContent = "استيراد"; }
+  });
+}
+
+// بنبني خطة الاستيراد: بنستخدم الموجود بنفس الاسم، ونعمل الجديد بس
+function planImport(rows, destId, defFreq, build) {
+  const now = serverTimestamp(), ops = [], updates = new Map(), openIds = new Set(destId ? [destId] : []);
+  const tmpAreas = [], tmpEq = [];
+  let newAreas = 0, newEq = 0, newParts = 0, dupParts = 0;
+  const mergedSet = new Set(), sample = [];
+  const findArea = (parentId, name) => [...areas, ...tmpAreas].find(a => pid(a) === parentId && a.name.toLowerCase() === name.toLowerCase());
+  const eqItems = new Map();
+  for (const r of rows) {
+    let parent = destId;
+    for (const name of r.path.slice(0, -1)) {
+      let a = findArea(parent, name);
+      if (!a) {
+        const ref = build ? doc(collection(db, "areas")) : { id: "tmp" + tmpAreas.length };
+        const order = Math.max(-1, ...[...areas, ...tmpAreas].filter(x => pid(x) === parent).map(x => x.order ?? 0)) + 1;
+        a = { id: ref.id, name, parentId: parent, order }; tmpAreas.push(a); newAreas++;
+        if (build) ops.push([ref, { name, parentId: parent, order, createdAt: now, updatedAt: now }]);
+      }
+      openIds.add(a.id); parent = a.id;
+    }
+    const tag = r.path[r.path.length - 1];
+    let e = [...equipment, ...tmpEq].find(x => x.areaId === parent && !x.parentEqId && x.tag.toLowerCase() === tag.toLowerCase());
+    if (!e) {
+      e = { id: build ? doc(collection(db, "equipment")).id : "tmpe" + tmpEq.length, tag, areaId: parent, parentEqId: "", items: [], isNew: true };
+      tmpEq.push(e); newEq++;
+      if (sample.length < 8) sample.push([...r.path].join(" / "));
+    }
+    if (!eqItems.has(e.id)) eqItems.set(e.id, { e, items: (e.items || []).map(i => ({ ...i })) });
+    const slot = eqItems.get(e.id);
+    if (slot.items.some(i => i.text.toLowerCase() === r.part.toLowerCase())) { dupParts++; continue; }
+    slot.items.push({ text: r.part, freq: r.freq || defFreq }); newParts++;
+    if (!e.isNew) mergedSet.add(e.id);
+  }
+  if (build) {
+    let order = Math.max(-1, ...equipment.map(x => x.order ?? 0)) + 1;
+    for (const { e, items } of eqItems.values()) {
+      if (e.isNew) ops.push([doc(db, "equipment", e.id), { tag: e.tag, route: "", areaId: e.areaId, parentEqId: "", items, active: true, order: order++, createdAt: now, updatedAt: now }]);
+      else if (items.length !== (e.items || []).length) updates.set(doc(db, "equipment", e.id), items);
+    }
+  }
+  return { ops, updates, openIds, newAreas, newEq, newParts, dupParts, mergedEq: mergedSet.size, sample, more: Math.max(0, newEq - sample.length) };
+}
+
+$("#xl-root").addEventListener("click", () => excelDialog(""));
 
 /* ---------------- Users (admin) ---------------- */
 async function loadUsers() {
