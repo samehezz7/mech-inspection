@@ -217,6 +217,40 @@ td .u{direction:ltr;display:inline-block}
 nav.tabs .badge{background:var(--action);color:#fff;margin-inline-start:6px}
 @media (max-width:480px){.day{min-height:58px;padding:3px}.day .cnt{font-size:.66rem}}
 
+/* Structure tree */
+.tree{display:grid;gap:12px}
+.tree details>summary{list-style:none;cursor:pointer}
+.tree details>summary::-webkit-details-marker{display:none}
+.area-node{background:var(--panel);border:1.5px solid var(--line);border-radius:8px}
+.area-node>summary{display:flex;align-items:center;gap:10px;padding:14px 16px;border-inline-start:6px solid var(--plate);border-radius:8px}
+.caret{width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:8px solid var(--muted);transition:transform .15s;flex:none}
+details[open]>summary .caret{transform:rotate(-90deg)}
+.area-node>summary .aname{font-size:1.125rem;font-weight:700}
+.node-meta{color:var(--muted);font-size:.85rem;margin-inline-start:auto;text-align:end}
+.node-actions{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 12px}
+.node-actions .icon-btn{min-width:40px;min-height:40px}
+@media (max-width:480px){.node-actions .btn.small{padding:4px 10px}.node-actions .icon-btn{min-width:36px}}
+.children{margin:0 16px 14px;padding-inline-start:14px;border-inline-start:2px dashed var(--line);display:grid;gap:8px}
+.eq-node{background:var(--bg);border:1.5px solid var(--line);border-radius:6px}
+.eq-node.off{opacity:.6}
+.eq-node>summary{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.eq-node>summary .tag{direction:ltr;font-weight:700}
+.eq-node .node-actions{padding:0 12px 10px}
+.parts{list-style:none;margin:0 12px 10px;padding:0 0 0 0;padding-inline-start:12px;border-inline-start:2px solid var(--line);display:grid;gap:6px}
+.part{display:grid;grid-template-columns:1fr 140px auto;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.part .ptext{direction:ltr;text-align:left;unicode-bidi:plaintext;font-size:.95rem}
+.part select{background:var(--bg);border:1.5px solid var(--line);border-radius:6px;padding:6px 8px;min-height:40px;width:100%}
+.add-part{display:grid;grid-template-columns:1fr 140px auto auto;gap:8px;margin:0 12px 12px;align-items:center}
+.add-part input,.add-part select{background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;min-height:44px;width:100%}
+.empty-node{color:var(--muted);font-size:.9rem;padding:4px 0}
+.area-node .area-node{background:var(--bg);border-radius:6px}
+.area-node .area-node>summary{border-inline-start-color:var(--muted);padding:10px 12px;border-radius:6px}
+.area-node .area-node>summary .aname{font-size:1rem}
+.area-node .area-node .node-actions{padding:0 12px 10px}
+.area-node .area-node .children{margin:0 12px 12px}
+.area-node .area-node .eq-node{background:var(--panel)}
+@media (max-width:620px){.part{grid-template-columns:1fr auto}.part select{grid-column:1}.add-part{grid-template-columns:1fr 1fr}.add-part input{grid-column:1/-1}}
+
 /* Equipment admin */
 .route-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:20px 0 10px}
 .eq-row{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px}
@@ -315,7 +349,7 @@ nav.tabs .badge{background:var(--action);color:#fff;margin-inline-start:6px}
         <div class="freq-tabs" id="freq-tabs" role="tablist" aria-label="تكرار الفحص"></div>
         <div class="dash-head">
           <p id="dash-summary"></p>
-          <select class="inline" id="f-route" aria-label="تصفية بالـ Route"><option value="">كل الـ Routes</option></select>
+          <select class="inline" id="f-route" aria-label="تصفية بالـ Area"><option value="">كل الـ Areas</option></select>
         </div>
         <div id="dash-list"></div>
       </div>
@@ -343,7 +377,7 @@ nav.tabs .badge{background:var(--action);color:#fff;margin-inline-start:6px}
           <button class="icon-btn" id="cal-next-y" type="button" aria-label="السنة الجاية">←</button>
         </div>
         <div class="filters-row">
-          <select class="inline" id="cal-route" aria-label="تصفية بالـ Route"><option value="">كل الـ Routes</option></select>
+          <select class="inline" id="cal-route" aria-label="تصفية بالـ Area"><option value="">كل الـ Areas</option></select>
           <select class="inline" id="cal-freq" aria-label="تصفية بالتكرار"><option value="">كل التكرارات</option></select>
         </div>
       </div>
@@ -391,6 +425,7 @@ nav.tabs .badge{background:var(--action);color:#fff;margin-inline-start:6px}
           <option value="monitor">فيها بنود تحتاج متابعة</option>
         </select>
         <select class="inline" id="f-freq" aria-label="تصفية بالتكرار"><option value="">كل التكرارات</option></select>
+        <select class="inline" id="f-area" aria-label="تصفية بالـ Area"><option value="">كل الـ Areas</option></select>
         <button class="btn ghost small" id="refresh" type="button">تحديث</button>
       </div>
       <ul class="log" id="log"></ul>
@@ -400,12 +435,12 @@ nav.tabs .badge{background:var(--action);color:#fff;margin-inline-start:6px}
     <section id="tab-equipment" role="tabpanel" hidden>
       <div id="eq-list-view">
         <div class="section-head">
-          <h2>المعدات وبنود الفحص</h2>
-          <button class="btn small" id="eq-add" type="button">إضافة معدة</button>
+          <h2>هيكل المعدات</h2>
+          <button class="btn small" id="area-add" type="button">إضافة قسم رئيسي</button>
         </div>
         <div class="card" id="eq-import" hidden>
           <h3 style="margin-bottom:8px">مفيش معدات لسه</h3>
-          <p class="hint" style="margin-bottom:12px">تقدر تستورد القائمة الأساسية (14 معدة و95 بند من ملف Schedule For CMs Inspection)، وبعدين تعدّل تكرار كل بند.</p>
+          <p class="hint" style="margin-bottom:12px">تقدر تستورد القائمة الأساسية (14 معدة و95 Part من ملف Schedule For CMs Inspection) تحت Gypsum Plant، وبعدين تعدّل تكرار كل Part.</p>
           <div class="bulk">
             <label for="imp-freq">التكرار المبدئي لكل البنود</label>
             <select class="inline" id="imp-freq"></select>
@@ -419,16 +454,16 @@ nav.tabs .badge{background:var(--action);color:#fff;margin-inline-start:6px}
           <h2 id="ed-title" style="margin-bottom:14px">إضافة معدة</h2>
           <div class="grid2">
             <div class="field"><label for="ed-tag">اسم/كود المعدة</label><input id="ed-tag" dir="ltr" maxlength="80" placeholder="B.C L19"></div>
-            <div class="field"><label for="ed-route">الـ Route</label><input id="ed-route" list="routes-dl" maxlength="80" placeholder="Gypsum Plant"><datalist id="routes-dl"></datalist><span class="hint">اختار Route موجود أو اكتب اسم جديد</span></div>
+            <div class="field"><label for="ed-area">الـ Area</label><select id="ed-area"></select></div>
           </div>
-          <label class="check"><input type="checkbox" id="ed-active"> المعدة شغالة وتظهر في الرئيسية</label>
-          <h3 style="margin:8px 0 10px">بنود الفحص</h3>
+          <label class="check"><input type="checkbox" id="ed-active"> المعدة شغالة وتظهر في الرئيسية والتقويم</label>
+          <h3 style="margin:8px 0 10px">الـ Parts</h3>
           <div class="bulk">
             <select class="inline" id="ed-bulk" aria-label="تكرار لكل البنود"></select>
-            <button class="btn ghost small" id="ed-bulk-btn" type="button">تطبيق على كل البنود</button>
+            <button class="btn ghost small" id="ed-bulk-btn" type="button">تطبيق على كل الـ Parts</button>
           </div>
           <ol class="ed-items" id="ed-items"></ol>
-          <button class="btn ghost small" id="ed-add-item" type="button">إضافة بند</button>
+          <button class="btn ghost small" id="ed-add-item" type="button">إضافة Part</button>
           <p class="err" id="ed-err" role="alert" style="margin-top:12px"></p>
           <div class="save-bar">
             <button class="btn danger small" id="ed-delete" type="button">حذف المعدة</button>
@@ -667,7 +702,7 @@ function enterApp() {
   $("#tab-eq-btn").hidden = profile.role !== "admin";
   $("#acc-info").innerHTML = `${esc(profile.name)}<br><span class="hint">اسم المستخدم: <code>${esc(profile.username)}</code></span>`;
   selectTab("home");
-  refreshOverdue();
+  loadData().then(ensureAreas).then(() => { if (!$("#tab-home").hidden && !draft) renderDash(); refreshOverdue(); });
   setInterval(refreshOverdue, 30 * 60 * 1000);
 }
 
@@ -677,7 +712,7 @@ function selectTab(name) {
   for (const t of ["home", "calendar", "history", "equipment", "users", "account"]) $("#tab-" + t).hidden = t !== name;
   if (name === "calendar") openCalendar();
   if (name === "home" && !draft) loadData().then(renderDash);
-  if (name === "equipment") { showEqList(); loadData().then(renderEqAdmin); }
+  if (name === "equipment") { showEqList(); loadData().then(ensureAreas).then(renderEqAdmin); }
   if (name === "history") loadHistory();
   if (name === "users") loadUsers();
   window.scrollTo(0, 0);
@@ -687,17 +722,74 @@ function selectTab(name) {
 let draft = null;
 
 /* ---------------- Data ---------------- */
-let equipment = [], statusMap = {}, curFreq = "daily";
+let equipment = [], areas = [], statusMap = {}, curFreq = "daily";
+// الهيكل الأساسي للمصنع: أقسام رئيسية وتحتها Areas فرعية
+const DEFAULT_TREE = [
+  ["Crushing Area", []], ["Line 1", []], ["Line 2", []], ["Line 3", []],
+  ["Cement Mills", ["CM1", "CM2", "CM3", "CM4", "CM5", "CM6", "Gypsum Plant", "Clinker Pan Conveyors"]],
+  ["Packing Area", []], ["RDF Factory", []]
+];
+let areaFlat = [];
+const pid = a => a.parentId || "";
+const areaById = id => areas.find(a => a.id === id);
+const kids = id => areas.filter(a => pid(a) === id).sort((x, y) => (x.order ?? 0) - (y.order ?? 0) || x.name.localeCompare(y.name));
+function indexAreas() {
+  areaFlat = []; const seen = new Set();
+  const walk = (id, d) => kids(id).forEach(a => { if (seen.has(a.id)) return; seen.add(a.id); areaFlat.push({ a, depth: d }); walk(a.id, d + 1); });
+  walk("", 0);
+  areas.filter(a => !seen.has(a.id)).forEach(a => { seen.add(a.id); areaFlat.push({ a, depth: 0 }); walk(a.id, 1); });
+}
+const pathOf = a => { const n = []; let x = a, g = 0; while (x && g++ < 20) { n.unshift(x.name); x = areaById(pid(x)); } return n.join(" / "); };
+const areaOf = e => areaById(e.areaId);
+const areaName = e => { const a = areaOf(e); return a ? pathOf(a) : (e.route || "بدون Area"); };
+const areaRank = e => { const i = areaFlat.findIndex(x => x.a.id === e.areaId); return i < 0 ? 9999 : i; };
+function subtreeIds(id) { const s = new Set([id]); areaFlat.forEach(({ a }) => { if (s.has(pid(a))) s.add(a.id); }); return s; }
+const indent = d => "\u00A0\u00A0\u00A0".repeat(d);
+// قايمة Areas للفلاتر: بس اللي تحتها معدات
+function areaOptions(list, keep) {
+  return `<option value="">كل الـ Areas</option>` + areaFlat.filter(({ a }) => { const s = subtreeIds(a.id); return list.some(e => s.has(e.areaId)); })
+    .map(({ a, depth }) => `<option value="${esc(a.id)}" ${a.id === keep ? "selected" : ""}>${indent(depth)}${esc(a.name)}</option>`).join("");
+}
 
 async function loadData() {
   try {
-    const [eqSnap, stSnap] = await Promise.all([getDocs(collection(db, "equipment")), getDocs(collection(db, "status"))]);
+    const [eqSnap, stSnap, arSnap] = await Promise.all([getDocs(collection(db, "equipment")), getDocs(collection(db, "status")), getDocs(collection(db, "areas"))]);
+    areas = arSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    indexAreas();
     equipment = eqSnap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (a.route || "").localeCompare(b.route || "") || (a.order ?? 0) - (b.order ?? 0) || a.tag.localeCompare(b.tag));
+      .sort((a, b) => areaRank(a) - areaRank(b) || areaName(a).localeCompare(areaName(b)) || (a.order ?? 0) - (b.order ?? 0) || a.tag.localeCompare(b.tag));
     statusMap = Object.fromEntries(stSnap.docs.map(d => [d.id, d.data()]));
   } catch (e) { toast(authMsg(e)); }
 }
-const routesOf = list => [...new Set(list.map(e => e.route || "بدون Route"))];
+const routesOf = list => [...new Set(list.map(areaName))];
+
+// أول مرة: نعمل هيكل المصنع الأساسي، وننقل أي معدة مالهاش Area تحت Gypsum Plant
+async function ensureAreas() {
+  if (profile?.role !== "admin") return;
+  try {
+    const batch = writeBatch(db); let changed = false;
+    if (!areas.length) {
+      DEFAULT_TREE.forEach(([name, subs], i) => {
+        const ref = doc(collection(db, "areas"));
+        areas.push({ id: ref.id, name, order: i, parentId: "" });
+        batch.set(ref, { name, order: i, parentId: "", createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        subs.forEach((s, j) => {
+          const r2 = doc(collection(db, "areas"));
+          areas.push({ id: r2.id, name: s, order: j, parentId: ref.id });
+          batch.set(r2, { name: s, order: j, parentId: ref.id, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        });
+      });
+      indexAreas(); changed = true;
+    }
+    const gyp = areas.find(a => a.name === "Gypsum Plant") || areas[0];
+    equipment.filter(e => !areaOf(e)).forEach(e => {
+      const a = areas.find(x => x.name.toLowerCase() === (e.route || "").toLowerCase()) || gyp;
+      batch.update(doc(db, "equipment", e.id), { areaId: a.id, route: pathOf(a), updatedAt: serverTimestamp() });
+      changed = true;
+    });
+    if (changed) { await batch.commit(); await loadData(); }
+  } catch (e) { console.warn("areas", e); toast(authMsg(e)); }
+}
 
 /* ---------------- Dashboard ---------------- */
 function isDone(e, f) {
@@ -715,10 +807,10 @@ function renderDash() {
   }).join("");
   $("#freq-tabs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => { curFreq = b.dataset.f; renderDash(); }));
 
-  const rSel = $("#f-route"), keep = rSel.value, routes = routesOf(active);
-  rSel.innerHTML = `<option value="">كل الـ Routes</option>` + routes.map(r => `<option ${r === keep ? "selected" : ""}>${esc(r)}</option>`).join("");
-
-  const list = forFreq(curFreq).filter(e => !rSel.value || (e.route || "بدون Route") === rSel.value);
+  const rSel = $("#f-route"), keep = rSel.value;
+  rSel.innerHTML = areaOptions(active, keep);
+  const sub = rSel.value ? subtreeIds(rSel.value) : null;
+  const list = forFreq(curFreq).filter(e => !sub || sub.has(e.areaId));
   const done = list.filter(e => isDone(e, curFreq)).length;
   const from = periodStart(curFreq);
   $("#dash-summary").textContent = list.length
@@ -734,7 +826,7 @@ function renderDash() {
     return;
   }
   $("#dash-list").innerHTML = routesOf(list).map(r => {
-    const items = list.filter(e => (e.route || "بدون Route") === r)
+    const items = list.filter(e => areaName(e) === r)
       .sort((a, b) => isDone(a, curFreq) - isDone(b, curFreq));
     return `<div class="route-block"><h3 class="area-title">${esc(r)}</h3><div class="eq-grid">${items.map(e => {
       const n = e.items.filter(i => i.freq === curFreq).length, ok = isDone(e, curFreq);
@@ -752,10 +844,10 @@ $("#f-route").addEventListener("change", renderDash);
 function startDraft(eqId, freq) {
   const e = equipment.find(x => x.id === eqId);
   if (!e) return;
-  draft = { equipmentId: e.id, freq, area: e.route || "", equipment: e.tag,
+  draft = { equipmentId: e.id, freq, area: areaName(e), equipment: e.tag,
     items: e.items.filter(i => i.freq === freq).map(i => ({ item: i.text, status: "", note: "", photos: [] })) };
   $("#np-tag").textContent = e.tag;
-  $("#np-area").textContent = `${e.route ? e.route + "، " : ""}فحص ${FREQ_LABEL[freq]}`;
+  $("#np-area").textContent = `${areaName(e)}، فحص ${FREQ_LABEL[freq]}`;
   $("#gen-notes").value = "";
   $("#items").innerHTML = draft.items.map((it, k) => `
     <li class="item" data-k="${k}" data-status="">
@@ -905,13 +997,16 @@ async function loadHistory() {
     history = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const keep = $("#f-eq").value, tags = [...new Set([...equipment.map(e => e.tag), ...history.map(x => x.equipment)])].sort();
     $("#f-eq").innerHTML = `<option value="">كل المعدات</option>` + tags.map(t => `<option ${t === keep ? "selected" : ""}>${esc(t)}</option>`).join("");
+    const keepA = $("#f-area").value;
+    $("#f-area").innerHTML = `<option value="">كل الـ Areas</option>` + areaFlat.map(({ a, depth }) => { const pth = pathOf(a); return `<option value="${esc(pth)}" ${pth === keepA ? "selected" : ""}>${indent(depth)}${esc(a.name)}</option>`; }).join("");
     renderHistory();
   } catch (e) { $("#log").innerHTML = `<li class="empty">${esc(authMsg(e))}</li>`; }
 }
 
 function filtered() {
   const eq = $("#f-eq").value, st = $("#f-status").value, fq = $("#f-freq").value;
-  return history.filter(h => (!eq || h.equipment === eq) && (!st || (h.counts?.[st] || 0) > 0) && (!fq || h.freq === fq));
+  const ar = $("#f-area").value;
+  return history.filter(h => (!eq || h.equipment === eq) && (!st || (h.counts?.[st] || 0) > 0) && (!fq || h.freq === fq) && (!ar || h.area === ar || (h.area || "").startsWith(ar + " / ")));
 }
 
 function renderHistory() {
@@ -999,13 +1094,14 @@ $("#f-eq").addEventListener("change", renderHistory);
 $("#f-status").addEventListener("change", renderHistory);
 $("#f-freq").innerHTML += FREQS.map(f => `<option value="${f.id}">${f.label}</option>`).join("");
 $("#f-freq").addEventListener("change", renderHistory);
+$("#f-area").addEventListener("change", renderHistory);
 $("#refresh").addEventListener("click", loadHistory);
 
 $("#export").addEventListener("click", () => {
   const list = filtered();
   if (!list.length) return toast("مفيش بيانات للتنزيل.");
   const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const rows = [["التاريخ", "الـ Route", "المعدة", "التكرار", "المفتش", "البند", "الحالة", "ملاحظة البند", "ملاحظات عامة"]];
+  const rows = [["التاريخ", "الـ Area", "المعدة", "التكرار", "المفتش", "البند", "الحالة", "ملاحظة البند", "ملاحظات عامة"]];
   list.forEach(h => {
     const when = h.createdAt?.toDate ? fmt.format(h.createdAt.toDate()) : "";
     (h.items || []).forEach(i => rows.push([when, h.area, h.equipment, FREQ_LABEL[h.freq] || "", h.inspectorName, i.item, STATUS[i.status] || i.status, i.note, h.notes]));
@@ -1050,10 +1146,11 @@ async function loadCal(year) {
 }
 
 function buildTasks(year, doneMap, route, freq) {
+  const sub = route ? subtreeIds(route) : null;
   const from = new Date(year, 0, 1), to = new Date(year, 11, 31), today = dayOnly(new Date()), out = [];
   for (const e of equipment) {
     if (e.active === false) continue;
-    if (route && (e.route || "بدون Route") !== route) continue;
+    if (sub && !sub.has(e.areaId)) continue;
     const startAt = (e.createdAt || e.updatedAt)?.toDate ? dayOnly((e.createdAt || e.updatedAt).toDate()) : null;
     const freqs = [...new Set((e.items || []).map(i => i.freq))].filter(f => !freq || f === freq);
     for (const f of freqs) {
@@ -1082,7 +1179,7 @@ async function openCalendar() {
   $("#cal-months").innerHTML = `<div class="empty">جاري التحميل...</div>`;
   await loadData();
   const keep = $("#cal-route").value;
-  $("#cal-route").innerHTML = `<option value="">كل الـ Routes</option>` + routesOf(equipment.filter(e => e.active !== false)).map(r => `<option ${r === keep ? "selected" : ""}>${esc(r)}</option>`).join("");
+  $("#cal-route").innerHTML = areaOptions(equipment.filter(e => e.active !== false), keep);
   renderCalendar();
 }
 
@@ -1146,7 +1243,7 @@ function taskRow(t) {
   const period = t.f === "daily" ? dayFmt.format(t.s) : `${dayFmt.format(t.s)} لحد ${dayFmt.format(t.end)}`;
   const done = t.rec?.at?.toDate ? ` ${dayFmt.format(t.rec.at.toDate())}، ${esc(t.rec.by)}` : "";
   return `<li class="task">
-    <div><div class="tag">${esc(t.e.tag)}</div><div class="meta">${esc(FREQ_LABEL[t.f])}، ${esc(t.e.route || "بدون Route")}، الفترة: ${period}</div></div>
+    <div><div class="tag">${esc(t.e.tag)}</div><div class="meta">${esc(FREQ_LABEL[t.f])}، ${esc(areaName(t.e))}، الفترة: ${period}</div></div>
     <div class="side"><span class="chip ${t.st}">${ST_LABEL[t.st]}${t.st === "done" ? done : ""}</span>
       ${t.st === "current" ? `<button class="btn small go" type="button" data-id="${esc(t.e.id)}" data-f="${t.f}">ابدأ الفحص</button>` : ""}</div>
   </li>`;
@@ -1170,7 +1267,7 @@ function renderOverdueList(missed) {
   $("#overdue-list").innerHTML = groups.length ? groups.map(x => {
     const cur = isDone(x.e, x.f);
     return `<li class="task">
-      <div><div class="tag">${esc(x.e.tag)}</div><div class="meta">${esc(FREQ_LABEL[x.f])}، ${esc(x.e.route || "بدون Route")}، فات ${x.n} ${x.n === 1 ? "مرة" : "مرات"}، آخرها ${dayFmt.format(x.last)}</div></div>
+      <div><div class="tag">${esc(x.e.tag)}</div><div class="meta">${esc(FREQ_LABEL[x.f])}، ${esc(areaName(x.e))}، فات ${x.n} ${x.n === 1 ? "مرة" : "مرات"}، آخرها ${dayFmt.format(x.last)}</div></div>
       <div class="side">${cur ? `<span class="chip done">الفترة الحالية اتعملت</span>` : `<button class="btn small go" type="button" data-id="${esc(x.e.id)}" data-f="${x.f}">افحصها دلوقتي</button>`}</div>
     </li>`;
   }).join("") : `<li class="empty">مفيش حاجة فات معادها. كله تمام.</li>`;
@@ -1253,42 +1350,164 @@ function freqSummary(items) {
   return FREQS.filter(f => c[f.id]).map(f => `${c[f.id]} ${f.label}`).join("، ");
 }
 
+const openAreas = new Set(), openEqs = new Set();
+let areasInit = false;
+
 function renderEqAdmin() {
   $("#eq-import").hidden = equipment.length > 0;
   $("#imp-freq").innerHTML = freqOptions("monthly");
-  if (!equipment.length) { $("#eq-admin-list").innerHTML = ""; return; }
-  $("#eq-admin-list").innerHTML = routesOf(equipment).map(r => `
-    <div class="route-head"><h3>${esc(r)}</h3>
-      ${r === "بدون Route" ? "" : `<button class="btn ghost small rename" type="button" data-r="${esc(r)}">تغيير اسم الـ Route</button>`}</div>
-    ${equipment.filter(e => (e.route || "بدون Route") === r).map(e => `
-      <div class="eq-row ${e.active === false ? "off" : ""}">
-        <div><div class="tag">${esc(e.tag)}</div>
-          <div class="meta">${(e.items || []).length} بنود: ${esc(freqSummary(e.items))}${e.active === false ? "، موقوفة" : ""}</div></div>
-        <button class="btn ghost small edit" type="button" data-id="${esc(e.id)}">تعديل</button>
-      </div>`).join("")}`).join("");
-  $("#eq-admin-list").querySelectorAll(".edit").forEach(b => b.addEventListener("click", () => openEditor(equipment.find(e => e.id === b.dataset.id))));
-  $("#eq-admin-list").querySelectorAll(".rename").forEach(b => b.addEventListener("click", () => renameRoute(b.dataset.r)));
+  if (!areas.length) { $("#eq-admin-list").innerHTML = `<div class="empty">جاري تجهيز الهيكل...</div>`; return; }
+  const roots = areaFlat.filter(x => x.depth === 0).map(x => x.a);
+  $("#eq-admin-list").innerHTML = `<div class="tree">${roots.map((a, i) => areaNode(a, i, roots.length)).join("")}</div>`;
+  bindTree();
 }
 
-async function renameRoute(oldName) {
-  const name = (prompt(`الاسم الجديد للـ Route "${oldName}":`, oldName) || "").trim();
-  if (!name || name === oldName) return;
+function areaNode(a, idx, n) {
+  const subs = kids(a.id), eqs = equipment.filter(e => e.areaId === a.id);
+  const sid = subtreeIds(a.id), all = equipment.filter(e => sid.has(e.areaId)), parts = all.reduce((s, e) => s + (e.items || []).length, 0);
+  return `<details class="area-node" data-area="${esc(a.id)}" ${openAreas.has(a.id) ? "open" : ""}>
+    <summary><span class="caret"></span><span class="aname">${esc(a.name)}</span>
+      <span class="node-meta">${subs.length ? `<bdi>${subs.length} Areas</bdi>، ` : ""}<bdi>${all.length} معدات</bdi>، <bdi>${parts} Parts</bdi></span></summary>
+    <div class="node-actions">
+      <button class="btn small add-eq" type="button">إضافة معدة</button>
+      <button class="btn ghost small add-sub" type="button">إضافة Area فرعية</button>
+      <button class="btn ghost small ren-area" type="button">تغيير الاسم</button>
+      <button class="icon-btn area-up" type="button" ${idx === 0 ? "disabled" : ""} aria-label="طلّع ${esc(a.name)} لفوق">↑</button>
+      <button class="icon-btn area-down" type="button" ${idx === n - 1 ? "disabled" : ""} aria-label="نزّل ${esc(a.name)} لتحت">↓</button>
+      ${subs.length || eqs.length ? "" : `<button class="btn danger small del-area" type="button">حذف</button>`}
+    </div>
+    <div class="children">
+      ${subs.map((s, i) => areaNode(s, i, subs.length)).join("")}
+      ${eqs.map((e, ei) => eqNode(e, ei, eqs.length)).join("")}
+      ${subs.length || eqs.length ? "" : `<p class="empty-node">فاضية. ضيف معدة أو Area فرعية.</p>`}
+    </div>
+  </details>`;
+}
+
+function eqNode(e, ei, n) {
+  const items = e.items || [];
+  return `<details class="eq-node ${e.active === false ? "off" : ""}" data-id="${esc(e.id)}" ${openEqs.has(e.id) ? "open" : ""}>
+    <summary><span class="caret"></span><span class="tag">${esc(e.tag)}</span>
+      <span class="node-meta"><bdi>${items.length} Parts</bdi>${items.length ? ` (${esc(freqSummary(items))})` : ""}${e.active === false ? "، موقوفة" : ""}</span></summary>
+    <div class="node-actions">
+      <button class="btn small add-part-btn" type="button">إضافة Part</button>
+      <button class="btn ghost small edit" type="button">تعديل المعدة</button>
+      <button class="icon-btn eq-up" type="button" ${ei === 0 ? "disabled" : ""} aria-label="طلّع ${esc(e.tag)} لفوق">↑</button>
+      <button class="icon-btn eq-down" type="button" ${ei === n - 1 ? "disabled" : ""} aria-label="نزّل ${esc(e.tag)} لتحت">↓</button>
+    </div>
+    <form class="add-part" hidden>
+      <input class="ap-text" dir="auto" maxlength="200" placeholder="اسم الـ Part، مثلًا: Gearbox Oil Level" aria-label="اسم الـ Part الجديد">
+      <select class="ap-freq" aria-label="تكرار الـ Part">${freqOptions(items[items.length - 1]?.freq || "monthly")}</select>
+      <button class="btn small" type="submit">إضافة</button>
+      <button class="btn ghost small ap-cancel" type="button">إلغاء</button>
+    </form>
+    <ul class="parts">${items.map((it, k) => `<li class="part" data-k="${k}">
+      <span class="ptext">${esc(it.text)}</span>
+      <select class="p-freq" aria-label="تكرار ${esc(it.text)}">${freqOptions(it.freq)}</select>
+      <button class="icon-btn rm p-del" type="button" aria-label="امسح ${esc(it.text)}">×</button>
+    </li>`).join("") || `<li class="empty-node">مفيش Parts لسه.</li>`}</ul>
+  </details>`;
+}
+
+async function saveItems(e, items, msg) {
+  try {
+    await updateDoc(doc(db, "equipment", e.id), { items, updatedAt: serverTimestamp() });
+    e.items = items; toast(msg); renderEqAdmin(); refreshOverdue();
+  } catch (err) { toast(authMsg(err)); }
+}
+
+async function swapOrder(col, a, b) {
   try {
     const batch = writeBatch(db);
-    equipment.filter(e => e.route === oldName).forEach(e => batch.update(doc(db, "equipment", e.id), { route: name.slice(0, 80), updatedAt: serverTimestamp() }));
-    await batch.commit();
-    toast("اتغير اسم الـ Route");
-    await loadData(); renderEqAdmin();
-  } catch (e) { toast(authMsg(e)); }
+    batch.update(doc(db, col, a.id), { order: b.order ?? 0, updatedAt: serverTimestamp() });
+    batch.update(doc(db, col, b.id), { order: (a.order ?? 0) === (b.order ?? 0) ? (b.order ?? 0) + 1 : a.order ?? 0, updatedAt: serverTimestamp() });
+    await batch.commit(); await loadData(); renderEqAdmin();
+  } catch (err) { toast(authMsg(err)); }
 }
+
+function bindTree() {
+  const root = $("#eq-admin-list");
+  root.querySelectorAll(".area-node").forEach(node => {
+    const a = areaById(node.dataset.area), sibs = kids(pid(a)), ai = sibs.indexOf(a);
+    node.addEventListener("toggle", ev => { if (ev.target !== node) return; node.open ? openAreas.add(a.id) : openAreas.delete(a.id); });
+    const acts = node.querySelector(":scope > .node-actions");
+    acts.querySelector(".add-eq").addEventListener("click", () => openEditor(null, a.id));
+    acts.querySelector(".add-sub").addEventListener("click", () => addArea(a.id));
+    acts.querySelector(".ren-area").addEventListener("click", () => renameArea(a));
+    acts.querySelector(".area-up").addEventListener("click", () => swapOrder("areas", a, sibs[ai - 1]));
+    acts.querySelector(".area-down").addEventListener("click", () => swapOrder("areas", a, sibs[ai + 1]));
+    acts.querySelector(".del-area")?.addEventListener("click", async () => {
+      if (!confirm(`حذف "${a.name}"؟`)) return;
+      try { await deleteDoc(doc(db, "areas", a.id)); toast("اتحذفت"); await loadData(); renderEqAdmin(); } catch (err) { toast(authMsg(err)); }
+    });
+  });
+  root.querySelectorAll(".eq-node").forEach(node => {
+    const e = equipment.find(x => x.id === node.dataset.id);
+    const sibs = equipment.filter(x => x.areaId === e.areaId), ei = sibs.indexOf(e);
+    node.addEventListener("toggle", () => { node.open ? openEqs.add(e.id) : openEqs.delete(e.id); });
+    const form = node.querySelector(".add-part");
+    node.querySelector(".add-part-btn").addEventListener("click", () => { node.open = true; openEqs.add(e.id); form.hidden = false; form.querySelector(".ap-text").focus(); });
+    node.querySelector(".ap-cancel").addEventListener("click", () => { form.hidden = true; });
+    form.addEventListener("submit", ev => {
+      ev.preventDefault();
+      const text = form.querySelector(".ap-text").value.trim();
+      if (!text) return form.querySelector(".ap-text").focus();
+      saveItems(e, [...(e.items || []), { text, freq: form.querySelector(".ap-freq").value }], `اتضاف ${text}`);
+    });
+    node.querySelector(".edit").addEventListener("click", () => openEditor(e));
+    node.querySelector(".eq-up").addEventListener("click", () => swapOrder("equipment", e, sibs[ei - 1]));
+    node.querySelector(".eq-down").addEventListener("click", () => swapOrder("equipment", e, sibs[ei + 1]));
+    node.querySelectorAll(".part").forEach(li => {
+      const k = +li.dataset.k;
+      li.querySelector(".p-freq").addEventListener("change", ev => {
+        const items = e.items.map((x, i) => i === k ? { ...x, freq: ev.target.value } : x);
+        saveItems(e, items, `${e.items[k].text}: بقى ${FREQ_LABEL[ev.target.value]}`);
+      });
+      li.querySelector(".p-del").addEventListener("click", () => {
+        if (!confirm(`امسح "${e.items[k].text}" من ${e.tag}؟`)) return;
+        saveItems(e, e.items.filter((_, i) => i !== k), "اتمسح الـ Part");
+      });
+    });
+  });
+}
+
+async function renameArea(a) {
+  const name = (prompt(`الاسم الجديد لـ "${a.name}":`, a.name) || "").trim().slice(0, 80);
+  if (!name || name === a.name) return;
+  if (kids(pid(a)).some(x => x.id !== a.id && x.name.toLowerCase() === name.toLowerCase())) return toast("فيه واحدة بنفس الاسم في نفس المكان.");
+  try {
+    const old = a.name; a.name = name;
+    const batch = writeBatch(db), sid = subtreeIds(a.id);
+    batch.update(doc(db, "areas", a.id), { name, updatedAt: serverTimestamp() });
+    equipment.filter(e => sid.has(e.areaId)).forEach(e => batch.update(doc(db, "equipment", e.id), { route: areaName(e), updatedAt: serverTimestamp() }));
+    try { await batch.commit(); } catch (err) { a.name = old; throw err; }
+    toast("اتغير الاسم"); await loadData(); renderEqAdmin();
+  } catch (err) { toast(authMsg(err)); }
+}
+
+async function addArea(parentId) {
+  const parent = areaById(parentId);
+  const name = (prompt(parent ? `اسم الـ Area الجديدة تحت ${parent.name}:` : "اسم القسم الرئيسي الجديد:") || "").trim().slice(0, 80);
+  if (!name) return;
+  const sibs = kids(parentId);
+  if (sibs.some(x => x.name.toLowerCase() === name.toLowerCase())) return toast("فيه واحدة بنفس الاسم في نفس المكان.");
+  try {
+    const ref = await addDoc(collection(db, "areas"), { name, parentId, order: Math.max(-1, ...sibs.map(a => a.order ?? 0)) + 1, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    openAreas.add(ref.id); if (parentId) openAreas.add(parentId);
+    toast(`اتضافت ${name}`); await loadData(); renderEqAdmin();
+  } catch (err) { toast(authMsg(err)); }
+}
+$("#area-add").addEventListener("click", () => addArea(""));
 
 $("#imp-btn").addEventListener("click", async () => {
   const f = $("#imp-freq").value, btn = $("#imp-btn");
   btn.disabled = true;
   try {
+    await ensureAreas();
+    const gyp = areas.find(a => a.name === "Gypsum Plant") || areas[0];
     const batch = writeBatch(db);
     SEED.forEach((e, i) => batch.set(doc(collection(db, "equipment")), {
-      tag: e.tag, route: e.area, items: e.items.map(text => ({ text, freq: f })), active: true, order: i, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+      tag: e.tag, route: pathOf(gyp), areaId: gyp.id, items: e.items.map(text => ({ text, freq: f })), active: true, order: i, createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
     await batch.commit();
     toast("اتستوردت القائمة الأساسية");
     await loadData(); renderEqAdmin();
@@ -1296,18 +1515,18 @@ $("#imp-btn").addEventListener("click", async () => {
   btn.disabled = false;
 });
 
-$("#eq-add").addEventListener("click", () => openEditor(null));
 
-function openEditor(e) {
+
+function openEditor(e, areaId) {
   edit = e ? { id: e.id, order: e.order ?? 0, createdAt: e.createdAt || e.updatedAt || null, items: (e.items || []).map(i => ({ ...i })) } : { id: null, order: null, items: [{ text: "", freq: "monthly" }] };
-  $("#ed-title").textContent = e ? `تعديل ${e.tag}` : "إضافة معدة";
+  const sel = e?.areaId || areaId || areaFlat[0]?.a.id;
+  $("#ed-area").innerHTML = areaFlat.map(({ a, depth }) => `<option value="${esc(a.id)}" ${a.id === sel ? "selected" : ""}>${indent(depth)}${esc(a.name)}</option>`).join("");
+  $("#ed-title").textContent = e ? `تعديل ${e.tag}` : `إضافة معدة في ${areaById(sel) ? pathOf(areaById(sel)) : ""}`;
   $("#ed-tag").value = e?.tag || "";
-  $("#ed-route").value = e?.route || "";
   $("#ed-active").checked = e ? e.active !== false : true;
   $("#ed-delete").hidden = !e;
   $("#ed-err").textContent = "";
   $("#ed-bulk").innerHTML = freqOptions("monthly");
-  $("#routes-dl").innerHTML = routesOf(equipment).filter(r => r !== "بدون Route").map(r => `<option value="${esc(r)}">`).join("");
   renderEdItems();
   $("#eq-list-view").hidden = true; $("#eq-edit-view").hidden = false;
   window.scrollTo(0, 0);
@@ -1318,7 +1537,7 @@ function renderEdItems(focusLast) {
   $("#ed-items").innerHTML = edit.items.map((it, k) => `
     <li class="ed-item" data-k="${k}">
       <span class="n">${k + 1}</span>
-      <input class="ed-text" dir="auto" maxlength="200" value="${esc(it.text)}" placeholder="مثلًا: Rubber Belt Condition" aria-label="نص البند ${k + 1}">
+      <input class="ed-text" dir="auto" maxlength="200" value="${esc(it.text)}" placeholder="مثلًا: Rubber Belt Condition" aria-label="اسم الـ Part ${k + 1}">
       <select class="ed-freq" aria-label="تكرار البند ${k + 1}">${freqOptions(it.freq)}</select>
       <span class="ed-btns">
         <button type="button" class="icon-btn up" ${k === 0 ? "disabled" : ""} aria-label="طلّع البند ${k + 1} لفوق">↑</button>
@@ -1346,23 +1565,25 @@ $("#ed-bulk-btn").addEventListener("click", () => {
   const f = $("#ed-bulk").value;
   edit.items.forEach(i => (i.freq = f));
   renderEdItems();
-  toast(`كل البنود بقت ${FREQ_LABEL[f]}`);
+  toast(`كل الـ Parts بقت ${FREQ_LABEL[f]}`);
 });
 $("#ed-cancel").addEventListener("click", showEqList);
 
 $("#ed-save").addEventListener("click", async () => {
-  const err = $("#ed-err"), tag = $("#ed-tag").value.trim(), route = $("#ed-route").value.trim();
+  const err = $("#ed-err"), tag = $("#ed-tag").value.trim(), areaId = $("#ed-area").value, route = areaById(areaId) ? pathOf(areaById(areaId)) : "";
   const items = edit.items.map(i => ({ text: i.text.trim(), freq: i.freq })).filter(i => i.text);
   if (!tag) return (err.textContent = "اكتب اسم أو كود المعدة.");
-  if (!items.length) return (err.textContent = "ضيف بند فحص واحد على الأقل.");
+  if (!areaId) return (err.textContent = "اختار الـ Area.");
+  if (!items.length) return (err.textContent = "ضيف Part واحد على الأقل.");
   if (equipment.some(e => e.id !== edit.id && e.tag.toLowerCase() === tag.toLowerCase())) return (err.textContent = "فيه معدة بنفس الاسم ده. اختار اسم تاني.");
   err.textContent = "";
   const btn = $("#ed-save"); btn.disabled = true;
-  const data = { tag, route, items, active: $("#ed-active").checked, updatedAt: serverTimestamp(), createdAt: edit.createdAt || serverTimestamp(),
+  const data = { tag, route, areaId, items, active: $("#ed-active").checked, updatedAt: serverTimestamp(), createdAt: edit.createdAt || serverTimestamp(),
     order: edit.order ?? (Math.max(-1, ...equipment.map(e => e.order ?? 0)) + 1) };
   try {
     if (edit.id) await setDoc(doc(db, "equipment", edit.id), data);
-    else await addDoc(collection(db, "equipment"), data);
+    else { const r = await addDoc(collection(db, "equipment"), data); openEqs.add(r.id); }
+    openAreas.add(areaId);
     toast("اتحفظت المعدة");
     showEqList(); await loadData(); renderEqAdmin(); refreshOverdue();
   } catch (e) { err.textContent = authMsg(e); }
