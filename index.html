@@ -1427,6 +1427,7 @@ function areaNode(a, idx, n) {
       <details class="more"><summary class="btn ghost small">المزيد ▾</summary><div class="more-menu">
         <button class="btn ghost small ren-area" type="button">تغيير الاسم</button>
         <button class="btn ghost small copy-area" type="button">نسخ بكل اللي تحتها</button>
+        <button class="btn ghost small pull-area" type="button">نسخ معدات من معدة تانية</button>
         <button class="btn ghost small xl-area" type="button">استيراد Excel هنا</button>
         ${subs.length || eqs.length ? "" : `<button class="btn danger small del-area" type="button">حذف</button>`}
       </div></details>
@@ -1450,6 +1451,7 @@ function eqNode(e, ei, n) {
       <details class="more"><summary class="btn ghost small">المزيد ▾</summary><div class="more-menu">
         <button class="btn ghost small edit" type="button">تعديل المعدة</button>
         <button class="btn ghost small copy-eq" type="button">نسخ بكل اللي تحتها</button>
+        <button class="btn ghost small pull-eq" type="button">نسخ معدات من معدة تانية</button>
         <button class="btn ghost small parts-from" type="button">نسخ Parts من معدة تانية</button>
       </div></details>
       <button class="icon-btn eq-up" type="button" ${ei === 0 ? "disabled" : ""} aria-label="طلّع ${esc(e.tag)} لفوق">↑</button>
@@ -1496,6 +1498,7 @@ function bindTree() {
     acts.querySelector(".add-sub").addEventListener("click", () => addArea(a.id));
     acts.querySelector(".ren-area").addEventListener("click", () => renameArea(a));
     acts.querySelector(".copy-area").addEventListener("click", () => copyDialog("area", a));
+    acts.querySelector(".pull-area").addEventListener("click", () => pullDialog("area", a));
     acts.querySelector(".xl-area").addEventListener("click", () => excelDialog(a.id));
     acts.querySelector(".area-up").addEventListener("click", () => swapOrder("areas", a, sibs[ai - 1]));
     acts.querySelector(".area-down").addEventListener("click", () => swapOrder("areas", a, sibs[ai + 1]));
@@ -1521,6 +1524,7 @@ function bindTree() {
     acts.querySelector(".edit").addEventListener("click", () => openEditor(e));
     acts.querySelector(".copy-eq").addEventListener("click", () => copyDialog("eq", e));
     acts.querySelector(".parts-from").addEventListener("click", () => partsFromDialog(e));
+    acts.querySelector(".pull-eq").addEventListener("click", () => pullDialog("eq", e));
     acts.querySelector(".eq-up").addEventListener("click", () => swapOrder("equipment", e, sibs[ei - 1]));
     acts.querySelector(".eq-down").addEventListener("click", () => swapOrder("equipment", e, sibs[ei + 1]));
     node.querySelectorAll(":scope > .parts > .part").forEach(li => {
@@ -1778,6 +1782,109 @@ function partsFromDialog(target) {
     saveItems(target, [...(target.items || []), ...add], `اتضاف ${add.length} Parts`);
   });
 }
+
+// "نسخ معدات من معدة تانية": بنسحب كل اللي تحت المصدر ونحطه جوه المكان الحالي
+function srcChildren(kind, id) {
+  if (kind === "area") return [
+    ...kids(id).map(a => ({ kind: "area", id: a.id, name: a.name, order: a.order ?? 0 })),
+    ...equipment.filter(e => e.areaId === id && !eqParent(e)).map(e => ({ kind: "eq", id: e.id, name: e.tag, order: e.order ?? 0 }))];
+  return eqKids(eqById(id)).map(e => ({ kind: "eq", id: e.id, name: e.tag, order: e.order ?? 0 }));
+}
+const srcParts = n => n.kind === "eq" ? (eqById(n.id).items || []) : [];
+
+function planPull(tKind, target, sKind, srcId, build) {
+  const now = serverTimestamp(), ops = [], updates = new Map();
+  const tmpAreas = [], tmpEq = [], st = { areas: 0, eq: 0, parts: 0, merged: 0 }, sample = [];
+  const allEq = () => [...equipment, ...tmpEq];
+  const newId = col => build ? doc(collection(db, col)).id : "tmp" + Math.random();
+  const ensureEq = (areaId, parentEqId, n) => {
+    let e = allEq().find(x => x.areaId === areaId && (x.parentEqId || "") === parentEqId && x.tag.toLowerCase() === n.name.toLowerCase());
+    if (!e) {
+      e = { id: newId("equipment"), tag: n.name, areaId, parentEqId, items: [], isNew: true, order: n.order };
+      tmpEq.push(e); st.eq++; if (sample.length < 8) sample.push(n.name);
+    }
+    const base = updates.get(e.id) || (e.items || []).map(i => ({ ...i }));
+    const have = new Set(base.map(i => i.text.toLowerCase()));
+    const add = srcParts(n).filter(i => !have.has(i.text.toLowerCase())).map(i => ({ text: i.text, freq: i.freq }));
+    if (add.length) { st.parts += add.length; if (!e.isNew) st.merged++; }
+    updates.set(e.id, [...base, ...add]);
+    return e;
+  };
+  // target = { kind: "area", id } أو { kind: "eq", id, areaId }
+  const walk = (src, tgt) => {
+    for (const n of srcChildren(src.kind, src.id)) {
+      if (tgt.kind === "area" && n.kind === "area") {
+        let a = [...areas, ...tmpAreas].find(x => pid(x) === tgt.id && x.name.toLowerCase() === n.name.toLowerCase());
+        if (!a) {
+          a = { id: newId("areas"), name: n.name, parentId: tgt.id, order: n.order }; tmpAreas.push(a); st.areas++;
+          if (sample.length < 8) sample.push(n.name);
+          if (build) ops.push([doc(db, "areas", a.id), { name: a.name, parentId: tgt.id, order: n.order, createdAt: now, updatedAt: now }]);
+        }
+        walk(n, { kind: "area", id: a.id });
+      } else {
+        const areaId = tgt.kind === "area" ? tgt.id : tgt.areaId, parentEqId = tgt.kind === "area" ? "" : tgt.id;
+        const e = ensureEq(areaId, parentEqId, n);
+        walk(n, { kind: "eq", id: e.id, areaId });
+      }
+    }
+  };
+  walk({ kind: sKind, id: srcId }, tKind === "area" ? { kind: "area", id: target.id } : { kind: "eq", id: target.id, areaId: target.areaId });
+  if (build) {
+    let order = Math.max(-1, ...equipment.map(x => x.order ?? 0)) + 1;
+    tmpEq.forEach(e => ops.push([doc(db, "equipment", e.id), { tag: e.tag, route: "", areaId: e.areaId, parentEqId: e.parentEqId, items: updates.get(e.id) || [], active: true, order: order++, createdAt: now, updatedAt: now }]));
+  }
+  const upd = [...updates.entries()].filter(([id, items]) => { const e = eqById(id); return e && items.length !== (e.items || []).length; });
+  return { ops, upd, st, sample };
+}
+
+function pullDialog(tKind, target) {
+  const tName = tKind === "area" ? target.name : target.tag;
+  // مينفعش المصدر يبقى المكان نفسه أو حاجة فوقه أو تحته في نفس الفرع
+  const tAreaSub = tKind === "area" ? subtreeIds(target.id) : null;
+  const tEqAnc = tKind === "eq" ? new Set([target.id, ...eqChainIds(target)]) : null;
+  const areaOk = a => {
+    if (!srcChildren("area", a.id).length) return false;
+    if (tKind === "area") return !tAreaSub.has(a.id) && !subtreeIds(a.id).has(target.id);
+    return !subtreeIds(a.id).has(target.areaId);
+  };
+  const eqOk = e => {
+    if (!eqKids(e).length) return false;
+    if (tKind === "eq") return !tEqAnc.has(e.id) && !eqDescendants(e).some(d => d.id === target.id);
+    return !tAreaSub.has(e.areaId);
+  };
+  const aList = areaFlat.filter(({ a }) => areaOk(a)), eList = equipment.filter(eqOk);
+  if (!aList.length && !eList.length) return toast("مفيش معدات تانية فيها حاجات تحتها تقدر تنسخها هنا.");
+  openDlg(`<h2>نسخ معدات لـ ${esc(tName)}</h2>
+    <div class="field"><label for="pl-src">انسخ كل اللي تحت</label><select id="pl-src">
+      ${aList.length ? `<optgroup label="أقسام وAreas">${aList.map(({ a }) => `<option value="area:${esc(a.id)}">${esc(pathOf(a))}</option>`).join("")}</optgroup>` : ""}
+      ${eList.length ? `<optgroup label="معدات">${eList.map(e => `<option value="eq:${esc(e.id)}">${esc(areaName(e))} / ${esc(e.tag)}</option>`).join("")}</optgroup>` : ""}
+    </select></div>
+    <div class="preview" id="pl-prev"></div>
+    <p class="hint">بيتنسخ كل اللي تحت المصدر بالـ Parts والتكرار. اللي موجود بنفس الاسم في ${esc(tName)} مش بيتكرر، والـ Parts الناقصة بس اللي بتتضاف عليه.</p>
+    <p class="err" id="pl-err" role="alert"></p>
+    <div class="dlg-actions"><button class="btn ghost" type="button" id="pl-cancel">إلغاء</button><button class="btn" type="button" id="pl-go">نسخ</button></div>`);
+  const parse = () => { const [k, id] = $("#pl-src").value.split(":"); return { k, id }; };
+  const prev = () => {
+    const { k, id } = parse(), { st, sample } = planPull(tKind, target, k, id, false);
+    $("#pl-prev").innerHTML = `<strong>هيتعمل:</strong> ${st.areas ? `${st.areas} Areas، ` : ""}${st.eq} معدات جديدة، ${st.parts} Parts${st.merged ? `، وهيتضاف على ${st.merged} معدات موجودة` : ""}.
+      <ul>${sample.map(s => `<li class="ltr">${esc(s)}</li>`).join("")}</ul>`;
+    $("#pl-go").disabled = !(st.areas + st.eq + st.parts);
+  };
+  prev(); $("#pl-src").addEventListener("change", prev);
+  $("#pl-cancel").addEventListener("click", closeDlg);
+  $("#pl-go").addEventListener("click", async () => {
+    const go = $("#pl-go"); go.disabled = true; go.textContent = "جاري النسخ...";
+    try {
+      const { k, id } = parse(), plan = planPull(tKind, target, k, id, true);
+      await commitOps(plan.ops);
+      for (const [eid, items] of plan.upd) await updateDoc(doc(db, "equipment", eid), { items, updatedAt: serverTimestamp() });
+      if (tKind === "area") openAreas.add(target.id); else { openEqs.add(target.id); openAreas.add(target.areaId); }
+      await loadData(); await fixRoutes(); closeDlg();
+      toast(`اتنسخ: ${plan.st.eq} معدات، ${plan.st.parts} Parts`); renderEqAdmin(); refreshOverdue();
+    } catch (e) { $("#pl-err").textContent = authMsg(e); go.disabled = false; go.textContent = "نسخ"; }
+  });
+}
+function eqChainIds(e) { const t = []; let p = eqParent(e), g = 0; while (p && g++ < 20) { t.push(p.id); p = eqParent(p); } return t; }
 
 /* ---- Excel ---- */
 let xlsxLib = null;
