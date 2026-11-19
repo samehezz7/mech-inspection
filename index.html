@@ -748,7 +748,12 @@ function indexAreas() {
 }
 const pathOf = a => { const n = []; let x = a, g = 0; while (x && g++ < 20) { n.unshift(x.name); x = areaById(pid(x)); } return n.join(" / "); };
 const areaOf = e => areaById(e.areaId);
-const areaName = e => { const a = areaOf(e); return a ? pathOf(a) : (e.route || "بدون Area"); };
+const eqById = id => equipment.find(x => x.id === id);
+const eqParent = e => e.parentEqId ? eqById(e.parentEqId) : null;
+function eqChain(e) { const t = []; let p = eqParent(e), g = 0; while (p && g++ < 20) { t.unshift(p.tag); p = eqParent(p); } return t; }
+const eqKids = e => equipment.filter(x => x.parentEqId === e.id);
+function eqDescendants(e) { const out = []; const walk = x => eqKids(x).forEach(k => { out.push(k); walk(k); }); walk(e); return out; }
+const areaName = e => { const a = areaOf(e), base = a ? pathOf(a) : (e.route || "بدون Area"), ch = eqChain(e); return ch.length ? `${base} / ${ch.join(" / ")}` : base; };
 const areaRank = e => { const i = areaFlat.findIndex(x => x.a.id === e.areaId); return i < 0 ? 9999 : i; };
 function subtreeIds(id) { const s = new Set([id]); areaFlat.forEach(({ a }) => { if (s.has(pid(a))) s.add(a.id); }); return s; }
 const indent = d => "\u00A0\u00A0\u00A0".repeat(d);
@@ -1389,7 +1394,7 @@ function renderEqAdmin() {
 }
 
 function areaNode(a, idx, n) {
-  const subs = kids(a.id), eqs = equipment.filter(e => e.areaId === a.id);
+  const subs = kids(a.id), eqs = equipment.filter(e => e.areaId === a.id && !eqParent(e));
   const sid = subtreeIds(a.id), all = equipment.filter(e => sid.has(e.areaId)), parts = all.reduce((s, e) => s + (e.items || []).length, 0);
   return `<details class="area-node" data-area="${esc(a.id)}" ${openAreas.has(a.id) ? "open" : ""}>
     <summary><span class="caret"></span><span class="aname">${esc(a.name)}</span>
@@ -1411,12 +1416,13 @@ function areaNode(a, idx, n) {
 }
 
 function eqNode(e, ei, n) {
-  const items = e.items || [];
+  const items = e.items || [], subs = eqKids(e);
   return `<details class="eq-node ${e.active === false ? "off" : ""}" data-id="${esc(e.id)}" ${openEqs.has(e.id) ? "open" : ""}>
     <summary><span class="caret"></span><span class="tag">${esc(e.tag)}</span>
-      <span class="node-meta"><bdi>${items.length} Parts</bdi>${items.length ? ` (${esc(freqSummary(items))})` : ""}${e.active === false ? "، موقوفة" : ""}</span></summary>
+      <span class="node-meta">${subs.length ? `<bdi>${subs.length} فرعية</bdi>، ` : ""}<bdi>${items.length} Parts</bdi>${items.length ? ` (${esc(freqSummary(items))})` : ""}${e.active === false ? "، موقوفة" : ""}</span></summary>
     <div class="node-actions">
       <button class="btn small add-part-btn" type="button">إضافة Part</button>
+      <button class="btn ghost small add-subeq" type="button">إضافة معدة فرعية</button>
       <button class="btn ghost small edit" type="button">تعديل المعدة</button>
       <button class="icon-btn eq-up" type="button" ${ei === 0 ? "disabled" : ""} aria-label="طلّع ${esc(e.tag)} لفوق">↑</button>
       <button class="icon-btn eq-down" type="button" ${ei === n - 1 ? "disabled" : ""} aria-label="نزّل ${esc(e.tag)} لتحت">↓</button>
@@ -1432,6 +1438,7 @@ function eqNode(e, ei, n) {
       <select class="p-freq" aria-label="تكرار ${esc(it.text)}">${freqOptions(it.freq)}</select>
       <button class="icon-btn rm p-del" type="button" aria-label="امسح ${esc(it.text)}">×</button>
     </li>`).join("") || `<li class="empty-node">مفيش Parts لسه.</li>`}</ul>
+    ${subs.length ? `<div class="children">${subs.map((s, i) => eqNode(s, i, subs.length)).join("")}</div>` : ""}
   </details>`;
 }
 
@@ -1468,22 +1475,23 @@ function bindTree() {
     });
   });
   root.querySelectorAll(".eq-node").forEach(node => {
-    const e = equipment.find(x => x.id === node.dataset.id);
-    const sibs = equipment.filter(x => x.areaId === e.areaId), ei = sibs.indexOf(e);
-    node.addEventListener("toggle", () => { node.open ? openEqs.add(e.id) : openEqs.delete(e.id); });
-    const form = node.querySelector(".add-part");
-    node.querySelector(".add-part-btn").addEventListener("click", () => { node.open = true; openEqs.add(e.id); form.hidden = false; form.querySelector(".ap-text").focus(); });
-    node.querySelector(".ap-cancel").addEventListener("click", () => { form.hidden = true; });
+    const e = eqById(node.dataset.id);
+    const sibs = equipment.filter(x => x.areaId === e.areaId && (x.parentEqId || "") === (e.parentEqId || "")), ei = sibs.indexOf(e);
+    node.addEventListener("toggle", ev => { if (ev.target !== node) return; node.open ? openEqs.add(e.id) : openEqs.delete(e.id); });
+    const acts = node.querySelector(":scope > .node-actions"), form = node.querySelector(":scope > .add-part");
+    acts.querySelector(".add-part-btn").addEventListener("click", () => { node.open = true; openEqs.add(e.id); form.hidden = false; form.querySelector(".ap-text").focus(); });
+    acts.querySelector(".add-subeq").addEventListener("click", () => openEditor(null, e.areaId, e.id));
+    form.querySelector(".ap-cancel").addEventListener("click", () => { form.hidden = true; });
     form.addEventListener("submit", ev => {
       ev.preventDefault();
       const text = form.querySelector(".ap-text").value.trim();
       if (!text) return form.querySelector(".ap-text").focus();
       saveItems(e, [...(e.items || []), { text, freq: form.querySelector(".ap-freq").value }], `اتضاف ${text}`);
     });
-    node.querySelector(".edit").addEventListener("click", () => openEditor(e));
-    node.querySelector(".eq-up").addEventListener("click", () => swapOrder("equipment", e, sibs[ei - 1]));
-    node.querySelector(".eq-down").addEventListener("click", () => swapOrder("equipment", e, sibs[ei + 1]));
-    node.querySelectorAll(".part").forEach(li => {
+    acts.querySelector(".edit").addEventListener("click", () => openEditor(e));
+    acts.querySelector(".eq-up").addEventListener("click", () => swapOrder("equipment", e, sibs[ei - 1]));
+    acts.querySelector(".eq-down").addEventListener("click", () => swapOrder("equipment", e, sibs[ei + 1]));
+    node.querySelectorAll(":scope > .parts > .part").forEach(li => {
       const k = +li.dataset.k;
       li.querySelector(".p-freq").addEventListener("change", ev => {
         const items = e.items.map((x, i) => i === k ? { ...x, freq: ev.target.value } : x);
@@ -1505,7 +1513,7 @@ async function renameArea(a) {
     const old = a.name; a.name = name;
     const batch = writeBatch(db), sid = subtreeIds(a.id);
     batch.update(doc(db, "areas", a.id), { name, updatedAt: serverTimestamp() });
-    equipment.filter(e => sid.has(e.areaId)).forEach(e => batch.update(doc(db, "equipment", e.id), { route: areaName(e), updatedAt: serverTimestamp() }));
+    equipment.filter(e => sid.has(e.areaId)).forEach(e => batch.update(doc(db, "equipment", e.id), { route: areaName(e).slice(0, 80), updatedAt: serverTimestamp() }));
     try { await batch.commit(); } catch (err) { a.name = old; throw err; }
     toast("اتغير الاسم"); await loadData(); renderEqAdmin();
   } catch (err) { toast(authMsg(err)); }
@@ -1543,11 +1551,14 @@ $("#imp-btn").addEventListener("click", async () => {
 
 
 
-function openEditor(e, areaId) {
-  edit = e ? { id: e.id, order: e.order ?? 0, createdAt: e.createdAt || e.updatedAt || null, items: (e.items || []).map(i => ({ ...i })) } : { id: null, order: null, items: [{ text: "", freq: "monthly" }] };
+function openEditor(e, areaId, parentEqId) {
+  edit = e ? { id: e.id, order: e.order ?? 0, parentEqId: e.parentEqId || "", createdAt: e.createdAt || e.updatedAt || null, items: (e.items || []).map(i => ({ ...i })) }
+           : { id: null, order: null, parentEqId: parentEqId || "", items: [{ text: "", freq: "monthly" }] };
+  const parentEq = edit.parentEqId ? eqById(edit.parentEqId) : null;
   const sel = e?.areaId || areaId || areaFlat[0]?.a.id;
   $("#ed-area").innerHTML = areaFlat.map(({ a, depth }) => `<option value="${esc(a.id)}" ${a.id === sel ? "selected" : ""}>${indent(depth)}${esc(a.name)}</option>`).join("");
-  $("#ed-title").textContent = e ? `تعديل ${e.tag}` : `إضافة معدة في ${areaById(sel) ? pathOf(areaById(sel)) : ""}`;
+  $("#ed-area").disabled = !!parentEq;
+  $("#ed-title").textContent = e ? `تعديل ${e.tag}` : parentEq ? `إضافة معدة فرعية تحت ${parentEq.tag}` : `إضافة معدة في ${areaById(sel) ? pathOf(areaById(sel)) : ""}`;
   $("#ed-tag").value = e?.tag || "";
   $("#ed-active").checked = e ? e.active !== false : true;
   $("#ed-delete").hidden = !e;
@@ -1600,15 +1611,23 @@ $("#ed-save").addEventListener("click", async () => {
   const items = edit.items.map(i => ({ text: i.text.trim(), freq: i.freq })).filter(i => i.text);
   if (!tag) return (err.textContent = "اكتب اسم أو كود المعدة.");
   if (!areaId) return (err.textContent = "اختار الـ Area.");
-  if (!items.length) return (err.textContent = "ضيف Part واحد على الأقل.");
   if (equipment.some(e => e.id !== edit.id && e.tag.toLowerCase() === tag.toLowerCase())) return (err.textContent = "فيه معدة بنفس الاسم ده. اختار اسم تاني.");
   err.textContent = "";
   const btn = $("#ed-save"); btn.disabled = true;
-  const data = { tag, route, areaId, items, active: $("#ed-active").checked, updatedAt: serverTimestamp(), createdAt: edit.createdAt || serverTimestamp(),
+  const parentEq = edit.parentEqId ? eqById(edit.parentEqId) : null;
+  const loc = parentEq ? `${route} / ${[...eqChain(parentEq), parentEq.tag].join(" / ")}` : route;
+  const data = { tag, route: loc.slice(0, 80), areaId, parentEqId: edit.parentEqId || "", items, active: $("#ed-active").checked, updatedAt: serverTimestamp(), createdAt: edit.createdAt || serverTimestamp(),
     order: edit.order ?? (Math.max(-1, ...equipment.map(e => e.order ?? 0)) + 1) };
   try {
-    if (edit.id) await setDoc(doc(db, "equipment", edit.id), data);
-    else { const r = await addDoc(collection(db, "equipment"), data); openEqs.add(r.id); }
+    if (edit.id) {
+      const me = eqById(edit.id), moved = me && me.areaId !== areaId;
+      const batch = writeBatch(db);
+      batch.set(doc(db, "equipment", edit.id), data);
+      // لو المعدة اتنقلت، المعدات الفرعية بتاعتها تتنقل معاها
+      if (moved) eqDescendants(me).forEach(d => batch.update(doc(db, "equipment", d.id), { areaId, updatedAt: serverTimestamp() }));
+      await batch.commit();
+    } else { const r = await addDoc(collection(db, "equipment"), data); openEqs.add(r.id); }
+    if (parentEq) openEqs.add(parentEq.id);
     openAreas.add(areaId);
     toast("اتحفظت المعدة");
     showEqList(); await loadData(); renderEqAdmin(); refreshOverdue();
@@ -1617,7 +1636,9 @@ $("#ed-save").addEventListener("click", async () => {
 });
 
 $("#ed-delete").addEventListener("click", async () => {
-  if (!edit?.id || !confirm("متأكد إنك عاوز تحذف المعدة دي؟ تفتيشاتها القديمة هتفضل في السجل.")) return;
+  if (!edit?.id) return;
+  if (eqKids(eqById(edit.id) || {}).length) return toast("امسح المعدات الفرعية اللي تحتها الأول.");
+  if (!confirm("متأكد إنك عاوز تحذف المعدة دي؟ تفتيشاتها القديمة هتفضل في السجل.")) return;
   try {
     await deleteDoc(doc(db, "equipment", edit.id));
     toast("اتحذفت المعدة");
