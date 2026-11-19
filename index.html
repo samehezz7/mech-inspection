@@ -167,6 +167,11 @@ td .u{direction:ltr;display:inline-block}
 .badge.zero{background:var(--good-bg);color:var(--good)}
 .dash-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .dash-head select{max-width:260px}
+.area-picker{display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex:1 1 260px}
+.area-picker select{flex:1 1 150px;max-width:240px;background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:10px 12px;min-height:44px}
+.area-picker .sep{color:var(--muted)}
+.dash-head .area-picker{justify-content:flex-end}
+.task .parts-line{color:var(--muted);font-size:.8rem;direction:ltr;text-align:left;unicode-bidi:plaintext;margin-top:2px}
 .due-card{text-align:start;background:var(--panel);border:1.5px solid var(--line);border-inline-start:6px solid var(--plate);border-radius:6px;padding:12px 14px;cursor:pointer;display:grid;gap:4px}
 .due-card:hover{border-color:var(--ink)}
 .due-card.done{border-inline-start-color:var(--good)}
@@ -179,7 +184,9 @@ td .u{direction:ltr;display:inline-block}
 /* Calendar */
 .cal-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-bar .yr{display:flex;align-items:center;gap:8px}
-.cal-bar .filters-row{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 300px;justify-content:flex-end}
+.cal-bar .filters-row{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 100%;align-items:center;justify-content:flex-start}
+.cal-bar .filters-row>select{flex:0 1 200px}
+.cal-bar .area-picker{flex:1 1 auto}
 .cal-bar select{flex:1 1 140px;max-width:220px}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-bottom:12px}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:4px;vertical-align:middle;flex:none}
@@ -349,7 +356,7 @@ details[open]>summary .caret{transform:rotate(-90deg)}
         <div class="freq-tabs" id="freq-tabs" role="tablist" aria-label="تكرار الفحص"></div>
         <div class="dash-head">
           <p id="dash-summary"></p>
-          <select class="inline" id="f-route" aria-label="تصفية بالـ Area"><option value="">كل الـ Areas</option></select>
+          <div class="area-picker" id="f-route"></div>
         </div>
         <div id="dash-list"></div>
       </div>
@@ -377,7 +384,7 @@ details[open]>summary .caret{transform:rotate(-90deg)}
           <button class="icon-btn" id="cal-next-y" type="button" aria-label="السنة الجاية">←</button>
         </div>
         <div class="filters-row">
-          <select class="inline" id="cal-route" aria-label="تصفية بالـ Area"><option value="">كل الـ Areas</option></select>
+          <div class="area-picker" id="cal-route"></div>
           <select class="inline" id="cal-freq" aria-label="تصفية بالتكرار"><option value="">كل التكرارات</option></select>
         </div>
       </div>
@@ -395,7 +402,7 @@ details[open]>summary .caret{transform:rotate(-90deg)}
           <button class="icon-btn" id="cal-next-m" type="button" aria-label="الشهر الجاي">←</button>
         </div>
         <div class="cal-grid" id="cal-grid"></div>
-        <p class="hint" style="margin-top:8px">كل فحص بيظهر في آخر يوم في فترته (آخر يوم في الأسبوع أو الشهر...). دوس على أي يوم علشان تشوف تفاصيله.</p>
+        <p class="hint" style="margin-top:8px">الأرقام = عدد الـ Parts. كل فحص بيظهر في آخر يوم في فترته (آخر يوم في الأسبوع أو الشهر...). دوس على أي يوم علشان تشوف تفاصيله.</p>
       </div>
       <div class="card" id="cal-day" hidden>
         <h3 id="cal-day-title" style="margin-bottom:10px"></h3>
@@ -425,8 +432,8 @@ details[open]>summary .caret{transform:rotate(-90deg)}
           <option value="monitor">فيها بنود تحتاج متابعة</option>
         </select>
         <select class="inline" id="f-freq" aria-label="تصفية بالتكرار"><option value="">كل التكرارات</option></select>
-        <select class="inline" id="f-area" aria-label="تصفية بالـ Area"><option value="">كل الـ Areas</option></select>
         <button class="btn ghost small" id="refresh" type="button">تحديث</button>
+        <div class="area-picker" id="f-area" style="flex-basis:100%"></div>
       </div>
       <ul class="log" id="log"></ul>
     </section>
@@ -435,7 +442,7 @@ details[open]>summary .caret{transform:rotate(-90deg)}
     <section id="tab-equipment" role="tabpanel" hidden>
       <div id="eq-list-view">
         <div class="section-head">
-          <h2>هيكل المعدات</h2>
+          <span></span>
           <button class="btn small" id="area-add" type="button">إضافة قسم رئيسي</button>
         </div>
         <div class="card" id="eq-import" hidden>
@@ -745,7 +752,30 @@ const areaName = e => { const a = areaOf(e); return a ? pathOf(a) : (e.route || 
 const areaRank = e => { const i = areaFlat.findIndex(x => x.a.id === e.areaId); return i < 0 ? 9999 : i; };
 function subtreeIds(id) { const s = new Set([id]); areaFlat.forEach(({ a }) => { if (s.has(pid(a))) s.add(a.id); }); return s; }
 const indent = d => "\u00A0\u00A0\u00A0".repeat(d);
-// قايمة Areas للفلاتر: بس اللي تحتها معدات
+// فلتر متدرّج بنفس هيكل المعدات: تختار القسم، فتظهر قايمة باللي تحته، وهكذا
+const pickers = {};
+function renderPicker(key, onChange) {
+  const st = pickers[key] ||= { path: [] }, box = $("#" + key);
+  let html = "", parent = "";
+  for (let lvl = 0; lvl < 10; lvl++) {
+    const ch = kids(parent);
+    if (!ch.length) { st.path = st.path.slice(0, lvl); break; }
+    const sel = st.path[lvl] || "", pa = areaById(parent);
+    html += `${lvl ? `<span class="sep" aria-hidden="true">‹</span>` : ""}<select data-lvl="${lvl}" aria-label="${lvl ? `تحت ${esc(pa.name)}` : "القسم"}">
+      <option value="">${lvl ? `كل ${esc(pa.name)}` : "كل الأقسام"}</option>
+      ${ch.map(a => `<option value="${esc(a.id)}" ${a.id === sel ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select>`;
+    if (!sel || !ch.some(a => a.id === sel)) { st.path = st.path.slice(0, lvl); break; }
+    parent = sel;
+  }
+  box.innerHTML = html;
+  box.querySelectorAll("select").forEach(s => s.addEventListener("change", () => {
+    const lvl = +s.dataset.lvl;
+    st.path = st.path.slice(0, lvl).concat(s.value ? [s.value] : []);
+    renderPicker(key, onChange); onChange();
+  }));
+}
+const pickVal = key => { const p = pickers[key]?.path || []; return p[p.length - 1] || ""; };
+
 function areaOptions(list, keep) {
   return `<option value="">كل الـ Areas</option>` + areaFlat.filter(({ a }) => { const s = subtreeIds(a.id); return list.some(e => s.has(e.areaId)); })
     .map(({ a, depth }) => `<option value="${esc(a.id)}" ${a.id === keep ? "selected" : ""}>${indent(depth)}${esc(a.name)}</option>`).join("");
@@ -807,9 +837,8 @@ function renderDash() {
   }).join("");
   $("#freq-tabs").querySelectorAll("button").forEach(b => b.addEventListener("click", () => { curFreq = b.dataset.f; renderDash(); }));
 
-  const rSel = $("#f-route"), keep = rSel.value;
-  rSel.innerHTML = areaOptions(active, keep);
-  const sub = rSel.value ? subtreeIds(rSel.value) : null;
+  renderPicker("f-route", renderDash);
+  const sub = pickVal("f-route") ? subtreeIds(pickVal("f-route")) : null;
   const list = forFreq(curFreq).filter(e => !sub || sub.has(e.areaId));
   const done = list.filter(e => isDone(e, curFreq)).length;
   const from = periodStart(curFreq);
@@ -838,7 +867,6 @@ function renderDash() {
   }).join("");
   $("#dash-list").querySelectorAll(".due-card").forEach(b => b.addEventListener("click", () => startDraft(b.dataset.id, curFreq)));
 }
-$("#f-route").addEventListener("change", renderDash);
 
 
 function startDraft(eqId, freq) {
@@ -997,15 +1025,14 @@ async function loadHistory() {
     history = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const keep = $("#f-eq").value, tags = [...new Set([...equipment.map(e => e.tag), ...history.map(x => x.equipment)])].sort();
     $("#f-eq").innerHTML = `<option value="">كل المعدات</option>` + tags.map(t => `<option ${t === keep ? "selected" : ""}>${esc(t)}</option>`).join("");
-    const keepA = $("#f-area").value;
-    $("#f-area").innerHTML = `<option value="">كل الـ Areas</option>` + areaFlat.map(({ a, depth }) => { const pth = pathOf(a); return `<option value="${esc(pth)}" ${pth === keepA ? "selected" : ""}>${indent(depth)}${esc(a.name)}</option>`; }).join("");
+    renderPicker("f-area", renderHistory);
     renderHistory();
   } catch (e) { $("#log").innerHTML = `<li class="empty">${esc(authMsg(e))}</li>`; }
 }
 
 function filtered() {
   const eq = $("#f-eq").value, st = $("#f-status").value, fq = $("#f-freq").value;
-  const ar = $("#f-area").value;
+  const ar = pickVal("f-area") ? pathOf(areaById(pickVal("f-area"))) : "";
   return history.filter(h => (!eq || h.equipment === eq) && (!st || (h.counts?.[st] || 0) > 0) && (!fq || h.freq === fq) && (!ar || h.area === ar || (h.area || "").startsWith(ar + " / ")));
 }
 
@@ -1094,7 +1121,6 @@ $("#f-eq").addEventListener("change", renderHistory);
 $("#f-status").addEventListener("change", renderHistory);
 $("#f-freq").innerHTML += FREQS.map(f => `<option value="${f.id}">${f.label}</option>`).join("");
 $("#f-freq").addEventListener("change", renderHistory);
-$("#f-area").addEventListener("change", renderHistory);
 $("#refresh").addEventListener("click", loadHistory);
 
 $("#export").addEventListener("click", () => {
@@ -1159,7 +1185,8 @@ function buildTasks(year, doneMap, route, freq) {
         if (end > to || (startAt && end < startAt)) continue;
         const rec = doneMap[`${e.id}|${f}|${ymd(s)}`];
         const st = rec ? "done" : end < today ? "missed" : s <= today ? "current" : "future";
-        out.push({ e, f, s, end, rec, st, key: ymd(end) });
+        const parts = e.items.filter(i => i.freq === f).map(i => i.text);
+        out.push({ e, f, s, end, rec, st, parts, n: parts.length, key: ymd(end) });
       }
     }
   }
@@ -1168,7 +1195,7 @@ function buildTasks(year, doneMap, route, freq) {
 
 function countBy(tasks) {
   const c = { done: 0, missed: 0, current: 0, future: 0 };
-  tasks.forEach(t => c[t.st]++);
+  tasks.forEach(t => (c[t.st] += t.n || 1));
   return c;
 }
 
@@ -1178,8 +1205,7 @@ async function openCalendar() {
   $("#notif-btn").hidden = !("Notification" in window) || Notification.permission !== "default";
   $("#cal-months").innerHTML = `<div class="empty">جاري التحميل...</div>`;
   await loadData();
-  const keep = $("#cal-route").value;
-  $("#cal-route").innerHTML = areaOptions(equipment.filter(e => e.active !== false), keep);
+  renderPicker("cal-route", () => { calDay = null; renderCalendar(); });
   renderCalendar();
 }
 
@@ -1188,7 +1214,7 @@ async function renderCalendar() {
   let map;
   try { map = await loadCal(calYear); }
   catch (e) { $("#cal-months").innerHTML = `<div class="empty">${esc(authMsg(e))}</div>`; return; }
-  const tasks = buildTasks(calYear, map, $("#cal-route").value, $("#cal-freq").value);
+  const tasks = buildTasks(calYear, map, pickVal("cal-route"), $("#cal-freq").value);
   const now = new Date();
 
   if (!equipment.some(e => e.active !== false)) {
@@ -1243,7 +1269,8 @@ function taskRow(t) {
   const period = t.f === "daily" ? dayFmt.format(t.s) : `${dayFmt.format(t.s)} لحد ${dayFmt.format(t.end)}`;
   const done = t.rec?.at?.toDate ? ` ${dayFmt.format(t.rec.at.toDate())}، ${esc(t.rec.by)}` : "";
   return `<li class="task">
-    <div><div class="tag">${esc(t.e.tag)}</div><div class="meta">${esc(FREQ_LABEL[t.f])}، ${esc(areaName(t.e))}، الفترة: ${period}</div></div>
+    <div><div class="tag">${esc(t.e.tag)} <span class="chip neutral"><bdi>${t.n} Parts</bdi></span></div><div class="meta">${esc(FREQ_LABEL[t.f])}، ${esc(areaName(t.e))}، الفترة: ${period}</div>
+      <div class="parts-line">${t.parts.map(esc).join(" · ")}</div></div>
     <div class="side"><span class="chip ${t.st}">${ST_LABEL[t.st]}${t.st === "done" ? done : ""}</span>
       ${t.st === "current" ? `<button class="btn small go" type="button" data-id="${esc(t.e.id)}" data-f="${t.f}">ابدأ الفحص</button>` : ""}</div>
   </li>`;
@@ -1311,7 +1338,6 @@ $("#notif-btn").addEventListener("click", async () => {
 });
 
 $("#overdue-go").addEventListener("click", () => { selectTab("calendar"); setTimeout(() => $("#cal-overdue").scrollIntoView({ behavior: "smooth" }), 400); });
-$("#cal-route").addEventListener("change", () => { calDay = null; renderCalendar(); });
 $("#cal-freq").addEventListener("change", () => { calDay = null; renderCalendar(); });
 $("#cal-prev-y").addEventListener("click", () => { calYear--; calDay = null; renderCalendar(); });
 $("#cal-next-y").addEventListener("click", () => { calYear++; calDay = null; renderCalendar(); });
@@ -1367,10 +1393,10 @@ function areaNode(a, idx, n) {
   const sid = subtreeIds(a.id), all = equipment.filter(e => sid.has(e.areaId)), parts = all.reduce((s, e) => s + (e.items || []).length, 0);
   return `<details class="area-node" data-area="${esc(a.id)}" ${openAreas.has(a.id) ? "open" : ""}>
     <summary><span class="caret"></span><span class="aname">${esc(a.name)}</span>
-      <span class="node-meta">${subs.length ? `<bdi>${subs.length} Areas</bdi>، ` : ""}<bdi>${all.length} معدات</bdi>، <bdi>${parts} Parts</bdi></span></summary>
+      <span class="node-meta">${subs.length ? `<bdi>${subs.length} فرعية</bdi>، ` : ""}<bdi>${all.length} معدات</bdi>، <bdi>${parts} Parts</bdi></span></summary>
     <div class="node-actions">
       <button class="btn small add-eq" type="button">إضافة معدة</button>
-      <button class="btn ghost small add-sub" type="button">إضافة Area فرعية</button>
+      <button class="btn ghost small add-sub" type="button">إضافة معدة فرعية</button>
       <button class="btn ghost small ren-area" type="button">تغيير الاسم</button>
       <button class="icon-btn area-up" type="button" ${idx === 0 ? "disabled" : ""} aria-label="طلّع ${esc(a.name)} لفوق">↑</button>
       <button class="icon-btn area-down" type="button" ${idx === n - 1 ? "disabled" : ""} aria-label="نزّل ${esc(a.name)} لتحت">↓</button>
@@ -1379,7 +1405,7 @@ function areaNode(a, idx, n) {
     <div class="children">
       ${subs.map((s, i) => areaNode(s, i, subs.length)).join("")}
       ${eqs.map((e, ei) => eqNode(e, ei, eqs.length)).join("")}
-      ${subs.length || eqs.length ? "" : `<p class="empty-node">فاضية. ضيف معدة أو Area فرعية.</p>`}
+      ${subs.length || eqs.length ? "" : `<p class="empty-node">فاضية. ضيف معدة أو معدة فرعية.</p>`}
     </div>
   </details>`;
 }
@@ -1487,7 +1513,7 @@ async function renameArea(a) {
 
 async function addArea(parentId) {
   const parent = areaById(parentId);
-  const name = (prompt(parent ? `اسم الـ Area الجديدة تحت ${parent.name}:` : "اسم القسم الرئيسي الجديد:") || "").trim().slice(0, 80);
+  const name = (prompt(parent ? `اسم المعدة الفرعية الجديدة تحت ${parent.name}:` : "اسم القسم الرئيسي الجديد:") || "").trim().slice(0, 80);
   if (!name) return;
   const sibs = kids(parentId);
   if (sibs.some(x => x.name.toLowerCase() === name.toLowerCase())) return toast("فيه واحدة بنفس الاسم في نفس المكان.");
