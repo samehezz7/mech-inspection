@@ -246,6 +246,11 @@ nav.tabs .badge{margin-inline-start:auto}
 .seg2 button[aria-pressed="true"]{background:var(--plate);color:var(--plate-ink);opacity:1}
 .sidebar .btn.ghost{color:var(--chrome-ink);border-color:rgba(255,255,255,.3)}
 .main{min-width:0;padding:24px 28px 80px}
+.sidebar,.rpanel{height:100vh;height:100dvh;overscroll-behavior:contain}
+.ai-log,.more-menu,.preview{overscroll-behavior:contain}
+.sidebar{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.rpanel{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+body.lock{overflow:hidden}
 .main-in{max-width:920px;margin:0 auto}
 .rpanel{position:sticky;top:0;height:100vh;overflow-y:auto;border-left:1px solid var(--line);background:var(--bg);padding:18px 16px;display:grid;align-content:start;gap:14px;z-index:30}
 .pcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
@@ -1970,6 +1975,9 @@ $("#ed-delete").addEventListener("click", async () => {
 
 /* ================= Shell: drawers, language, theme ================= */
 $("#menu-btn").addEventListener("click", () => $("#screen-app").classList.add("side-open"));
+// لما القايمة أو اللوحة مفتوحة فوق الصفحة (موبايل وشاشات صغيرة)، الصفحة اللي ورا ماتتحركش
+new MutationObserver(() => { const s = $("#screen-app"); document.body.classList.toggle("lock", s.classList.contains("side-open") || s.classList.contains("panel-open")); })
+  .observe($("#screen-app"), { attributes: true, attributeFilter: ["class"] });
 const openPanel = () => $("#screen-app").classList.add("panel-open");
 $("#panel-btn").addEventListener("click", openPanel);
 $("#panel-btn2").addEventListener("click", openPanel);
@@ -2448,7 +2456,8 @@ async function aiTurn(depth) {
   const parts = r.data?.candidates?.[0]?.content?.parts || [];
   if (!parts.length) { aiAdd("sys", L("المساعد مارجعش رد. جرّب تاني.", "No reply from the assistant. Try again.")); return; }
   aiMsgs.push({ role: "model", parts });
-  parts.filter(p => p.text && !p.thought).forEach(p => aiAdd("bot", esc(p.text)));
+  const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/^\s*[*-] /gm, "• ");
+  parts.filter(p => p.text && !p.thought).forEach(p => aiAdd("bot", md(p.text)));
   const calls = parts.filter(p => p.functionCall);
   if (!calls.length) return;
   const responses = [];
@@ -2529,7 +2538,7 @@ async function runTool(name, a) {
 /* ================= Google Apps Script (email + assistant) ================= */
 const APPS_SCRIPT = `// Mechanical Inspection Guide - email & assistant helper (Google Apps Script)
 // Deploy: Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone.
-// Assistant: Project Settings > Script Properties > add GEMINI_KEY (free key from aistudio.google.com).
+// Assistant: Project Settings > Script Properties > add GEMINI_KEY (free key from aistudio.google.com) and GEMINI_MODEL (e.g. gemini-4-hydrogen).
 const PROJECT_ID = '${firebaseConfig.projectId}';
 
 function doPost(e) {
@@ -2599,9 +2608,9 @@ function ai_(req) {
   const props = PropertiesService.getScriptProperties();
   const key = props.getProperty('GEMINI_KEY');
   if (!key) return { ok: false, error: 'ai_not_configured' };
-  const model = props.getProperty('GEMINI_MODEL') || 'gemini-flash-latest';
-  const res = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(key),
-    { method: 'post', contentType: 'application/json', payload: JSON.stringify(req.payload || {}), muteHttpExceptions: true });
+  const model = props.getProperty('GEMINI_MODEL') || 'gemini-4-hydrogen';
+  const res = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent',
+    { method: 'post', contentType: 'application/json', headers: { 'x-goog-api-key': key }, payload: JSON.stringify(req.payload || {}), muteHttpExceptions: true });
   let body = {};
   try { body = JSON.parse(res.getContentText() || '{}'); } catch (err) {}
   if (res.getResponseCode() !== 200) return { ok: false, error: (body.error && body.error.message) || ('http_' + res.getResponseCode()) };
