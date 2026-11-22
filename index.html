@@ -318,6 +318,14 @@ html[dir="ltr"] details[open]>summary .caret{transform:rotate(90deg)}
 /* Reports */
 .rp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .rp-frame{width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;min-height:400px}
+.rp-frame.editing{outline:3px solid var(--plate);outline-offset:2px}
+#rp-edit[aria-pressed="true"]{background:var(--plate);color:var(--plate-ink);border-color:var(--plate)}
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media (max-width:560px){.tpl-grid{grid-template-columns:1fr}}
+.sig-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.logo-prev{display:flex;gap:10px;align-items:center;margin-top:6px}
+.logo-prev img{max-height:48px;max-width:160px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px}
+dialog.dlg.wide{width:min(760px,calc(100vw - 32px))}
 .checks{display:flex;gap:18px;flex-wrap:wrap;margin:4px 0 14px}
 .code-box{width:100%;min-height:220px;font-family:ui-monospace,Consolas,monospace;font-size:.78rem;direction:ltr;text-align:left;background:var(--bg);border:1.5px solid var(--line);border-radius:8px;padding:10px}
 .steps{margin:6px 0 0;padding-inline-start:20px;display:grid;gap:6px}
@@ -392,7 +400,7 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
 .icon-btn:disabled{opacity:.35;cursor:default}
 .icon-btn.rm{color:var(--action)}
 @media (max-width:620px){.ed-item{grid-template-columns:auto 1fr auto}.ed-item .ed-text{grid-column:2/4}.ed-item select{grid-column:2}.ed-item .ed-btns{grid-column:3}.ed-item .icon-btn{min-width:40px}}
-.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:grid;place-items:center;z-index:30;padding:64px 16px 16px}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:grid;place-items:center;z-index:60;padding:64px 16px 16px}
 .lightbox img{max-width:100%;max-height:calc(100vh - 80px);border-radius:4px}
 .lightbox button{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));inset-inline-start:16px;background:#fff;color:#111;border:0;border-radius:6px;padding:6px 14px;font-weight:700;min-height:40px;cursor:pointer}
 
@@ -651,13 +659,18 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
           <div class="field" id="rp-from-f" hidden><label for="rp-from">من</label><input type="date" id="rp-from"></div>
           <div class="field" id="rp-to-f" hidden><label for="rp-to">لحد</label><input type="date" id="rp-to"></div>
           <div class="field"><label for="rp-insp">المفتش</label><select id="rp-insp"><option value="">كل المفتشين</option><option value="me">تفتيشاتي بس</option></select></div>
+          <div class="field"><label for="rp-lang">لغة التقرير</label><select id="rp-lang"><option value="">الافتراضي</option><option value="ar">العربية</option><option value="en">English</option></select></div>
         </div>
         <div class="field"><label>الـ Area</label><div class="area-picker" id="rp-area"></div></div>
         <div class="checks">
           <label class="check"><input type="checkbox" id="rp-all"> كل البنود (مش الملاحظات بس)</label>
           <label class="check"><input type="checkbox" id="rp-photos" checked> ضم صور الملاحظات</label>
         </div>
-        <button class="btn" id="rp-run" type="button">عرض التقرير</button>
+        <div class="field"><label for="rp-summary">الملخص والتوصيات (اختياري، بيظهر في أول التقرير)</label><textarea id="rp-summary" rows="3" maxlength="3000" placeholder="مثلًا: أهم الملاحظات الأسبوع ده، والأعمال المطلوبة من الصيانة..."></textarea></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="rp-run" type="button">عرض التقرير</button>
+          <button class="btn ghost" id="rp-design" type="button" hidden>شكل التقرير</button>
+        </div>
         <p class="err" id="rp-err" role="alert" style="margin-top:10px"></p>
       </div>
       <div id="rp-out" hidden>
@@ -665,7 +678,9 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
           <button class="btn" id="rp-pdf" type="button">PDF / طباعة</button>
           <button class="btn ghost" id="rp-xlsx" type="button">تنزيل Excel</button>
           <button class="btn ghost" id="rp-mail" type="button">إرسال بالإيميل</button>
+          <button class="btn ghost" id="rp-edit" type="button" aria-pressed="false">تعديل النص</button>
         </div>
+        <p class="hint" id="rp-edit-hint" hidden style="margin:-4px 0 10px">دوس على أي كلام في التقرير وغيّره. التعديلات بتطلع في الـ PDF والإيميل، وبتتمسح لو عملت "عرض التقرير" تاني.</p>
         <iframe class="rp-frame" id="rp-frame" title="معاينة التقرير"></iframe>
       </div>
     </section>
@@ -2163,12 +2178,34 @@ function download(blob, name) {
 const blobToB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(blob); });
 
 /* ================= Reports ================= */
-let report = null;
+let report = null, reportEdited = false;
 const toInput = d => ymd(d);
 const fromInput = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+
+// report language can differ from the site language
+let RLANG = LANG;
+const R = (ar, en) => (RLANG === "en" ? en : ar);
+const RLOC = () => (RLANG === "en" ? "en-GB" : "ar-EG-u-nu-latn");
+const STATUS_EN = { good: "Good", monitor: "Monitor", action: "Needs repair" };
+const FREQ_EN = { daily: "Daily", weekly: "Weekly", monthly: "Monthly", quarterly: "Every 3 months", semiannual: "Every 6 months", yearly: "Yearly" };
+const rS = s => (RLANG === "en" ? STATUS_EN[s] : STATUS[s]) || s;
+const rF = f => (RLANG === "en" ? FREQ_EN[f] : FREQ_LABEL[f]) || f || "";
+
+const DEFAULT_TPL = () => ({
+  company: "", dept: L("قسم التفتيش الميكانيكي", "Mechanical Inspection Department"), logo: "", accent: "#E8A600", header: "#1B2428", lang: "",
+  titles: { daily: "", weekly: "", monthly: "", custom: "" }, intro: "", footer: "",
+  sections: { kpis: true, findings: true, overdue: true, inspections: true },
+  signatures: [{ role: L("أعدّه", "Prepared by"), name: "{name}" }, { role: L("راجعه", "Reviewed by"), name: "" }, { role: L("اعتمده", "Approved by"), name: "" }]
+});
+function tpl() {
+  const d = DEFAULT_TPL(), t = settings.report || {};
+  return { ...d, ...t, titles: { ...d.titles, ...(t.titles || {}) }, sections: { ...d.sections, ...(t.sections || {}) }, signatures: t.signatures?.length ? t.signatures : d.signatures };
+}
+
 function openReports() {
   if (!$("#rp-date").value) { const t = toInput(new Date()); $("#rp-date").value = t; $("#rp-from").value = toInput(addDays(new Date(), -6)); $("#rp-to").value = t; }
   if (profile.role !== "admin" && !$("#rp-insp").dataset.init) { $("#rp-insp").value = "me"; $("#rp-insp").dataset.init = "1"; }
+  $("#rp-design").hidden = profile.role !== "admin";
   loadData().then(() => renderPicker("rp-area", () => {}));
 }
 $("#rp-kind").addEventListener("change", () => {
@@ -2185,8 +2222,17 @@ function reportRange() {
   if (kind === "weekly") { const s = periodStart("weekly", d); return [s, addDays(s, 7)]; }
   return [new Date(d.getFullYear(), d.getMonth(), 1), new Date(d.getFullYear(), d.getMonth() + 1, 1)];
 }
+function reportNo(kind, from, to) {
+  const y = from.getFullYear(), last = addDays(to, -1);
+  if (kind === "daily") return `D-${ymd(from).replace(/-/g, "")}`;
+  if (kind === "weekly") { const w = Math.floor((from - periodStart("weekly", new Date(y, 0, 1))) / 864e5 / 7) + 1; return `W-${y}-${String(w).padStart(2, "0")}`; }
+  if (kind === "monthly") return `M-${y}-${String(from.getMonth() + 1).padStart(2, "0")}`;
+  return `C-${ymd(from).replace(/-/g, "")}-${ymd(last).replace(/-/g, "")}`;
+}
 
 async function buildReport() {
+  const t = tpl();
+  RLANG = $("#rp-lang").value || t.lang || LANG;
   const kind = $("#rp-kind").value, [from, to] = reportRange();
   const areaId = pickVal("rp-area"), areaPath = areaId ? pathOf(areaById(areaId)) : "";
   const onlyMe = $("#rp-insp").value === "me";
@@ -2202,125 +2248,244 @@ async function buildReport() {
     all.push(row);
     if (it.status !== "good" || it.note) findings.push(row);
   }));
-  // photos for findings
-  if ($("#rp-photos").checked) {
-    const ids = [...new Set(findings.filter(f => f.insp.photoCount).map(f => f.insp.id))];
-    for (let i = 0; i < ids.length; i += 30) {
-      const ps = await getDocs(query(collection(db, "photos"), where("inspectionId", "in", ids.slice(i, i + 30))));
+  const fIds = [...new Set(findings.map(f => f.insp.id))];
+  for (let i = 0; i < fIds.length; i += 30) {
+    const ids = fIds.slice(i, i + 30);
+    if ($("#rp-photos").checked) {
+      const ps = await getDocs(query(collection(db, "photos"), where("inspectionId", "in", ids)));
       ps.docs.forEach(p => { const v = p.data(); const f = findings.find(r => r.insp.id === v.inspectionId && r.k === v.item); if (f && typeof v.data === "string" && v.data.startsWith("data:image/")) f.photos.push(v.data); });
     }
   }
-  // schedule compliance for the period
   const today = dayOnly(new Date()), sched = { due: 0, done: 0, missed: 0, open: 0 }, missedRows = [];
   const years = [...new Set([from.getFullYear(), addDays(to, -1).getFullYear()])];
   for (const y of years) {
-    const tasks = buildTasks(y, await loadCal(y), areaId, "").filter(t => t.end >= from && t.end < to);
-    tasks.forEach(t => {
-      if (t.st === "future") return;
-      sched.due++; if (t.st === "done") sched.done++; else if (t.st === "missed") { sched.missed++; missedRows.push(t); } else sched.open++;
+    buildTasks(y, await loadCal(y), areaId, "").filter(x => x.end >= from && x.end < to).forEach(x => {
+      if (x.st === "future") return;
+      sched.due++; if (x.st === "done") sched.done++; else if (x.st === "missed") { sched.missed++; missedRows.push(x); } else sched.open++;
     });
   }
   const closed = sched.done + sched.missed;
   sched.pct = closed ? Math.round(sched.done / closed * 100) : null;
-  const titles = { daily: L("تقرير التفتيش اليومي", "Daily Inspection Report"), weekly: L("تقرير التفتيش الأسبوعي", "Weekly Inspection Report"), monthly: L("تقرير التفتيش الشهري", "Monthly Inspection Report"), custom: L("تقرير التفتيش", "Inspection Report") };
-  const longD = new Intl.DateTimeFormat(LOC, { day: "numeric", month: "long", year: "numeric" });
-  const last = addDays(to, -1);
-  const period = kind === "daily" ? longD.format(from) : `${longD.format(from)} - ${longD.format(last)}`;
-  return { kind, from, to, title: titles[kind], period, areaPath, inspector: onlyMe ? profile.name : L("كل المفتشين", "All inspectors"), list, findings, all, totals, sched, missed: groupMissed(missedRows),
-    by: profile.name, at: new Date(), showAll: $("#rp-all").checked, fileBase: `inspection-report-${kind}-${ymd(from)}` };
+  const defTitles = { daily: R("تقرير التفتيش اليومي", "Daily Inspection Report"), weekly: R("تقرير التفتيش الأسبوعي", "Weekly Inspection Report"), monthly: R("تقرير التفتيش الشهري", "Monthly Inspection Report"), custom: R("تقرير التفتيش", "Inspection Report") };
+  const longD = new Intl.DateTimeFormat(RLOC(), { day: "numeric", month: "long", year: "numeric" }), last = addDays(to, -1);
+  return { kind, from, to, lang: RLANG, title: t.titles[kind] || defTitles[kind], period: kind === "daily" ? longD.format(from) : `${longD.format(from)} - ${longD.format(last)}`,
+    no: reportNo(kind, from, to), areaPath, inspector: onlyMe ? profile.name : R("كل المفتشين", "All inspectors"), list, findings, all, totals, sched,
+    missed: groupMissed(missedRows), by: profile.name, at: new Date(), showAll: $("#rp-all").checked, summary: $("#rp-summary").value.trim(),
+    fileBase: `inspection-report-${kind}-${ymd(from)}`, t };
 }
 
+// default template words follow the report language
+const TPL_WORDS = [["قسم التفتيش الميكانيكي", "Mechanical Inspection Department"], ["أعدّه", "Prepared by"], ["راجعه", "Reviewed by"], ["اعتمده", "Approved by"]];
+const tw = s => { const m = TPL_WORDS.find(p => p.includes(s)); return m ? m[RLANG === "en" ? 1 : 0] : s; };
 const STATUS_COLORS = { good: ["#DDEEE2", "#2F7A4B"], monitor: ["#F7E7CC", "#A86400"], action: ["#F6DAD6", "#B42318"] };
 function reportHtml(d, opt = {}) {
-  const SEP = L("، ", ", ");
-  const dir = LANG === "en" ? "ltr" : "rtl", al = LANG === "en" ? "left" : "right";
-  const th = `style="background:#1B2428;color:#fff;padding:8px 10px;text-align:${al};font-size:12px;border:1px solid #1B2428"`;
+  RLANG = d.lang;
+  const t = d.t, en = RLANG === "en", dir = en ? "ltr" : "rtl", al = en ? "left" : "right", ar_ = en ? "right" : "left", SEP = R("، ", ", ");
+  const A = t.accent || "#E8A600", HD = t.header || "#1B2428";
+  const th = `style="background:${HD};color:#fff;padding:8px 10px;text-align:${al};font-size:12px;border:1px solid ${HD}"`;
   const td = `style="padding:7px 10px;border:1px solid #D5D9D7;vertical-align:top;font-size:12px;text-align:${al}"`;
   const ltr = s => `<span dir="ltr" style="unicode-bidi:isolate">${esc(s)}</span>`;
-  const chip = s => { const [bg, fg] = STATUS_COLORS[s] || ["#eee", "#333"]; return `<span style="display:inline-block;background:${bg};color:${fg};border-radius:4px;padding:1px 7px;font-weight:700;font-size:11px;white-space:nowrap">${esc(STATUS[s] || s)}</span>`; };
-  const kpi = (n, label, color) => `<td style="padding:4px"><div style="background:#F3F4F2;border:1px solid #D5D9D7;border-radius:8px;padding:10px 12px"><div style="font-size:22px;font-weight:700;color:${color || "#1B2428"}">${n}</div><div style="font-size:11px;color:#5B676C">${label}</div></div></td>`;
-  const f = dayFmt, tf = new Intl.DateTimeFormat(LOC, { hour: "numeric", minute: "2-digit" });
+  const para = s => esc(s).replace(/\n/g, "<br>");
+  const chip = s => { const [bg, fg] = STATUS_COLORS[s] || ["#eee", "#333"]; return `<span style="display:inline-block;background:${bg};color:${fg};border-radius:4px;padding:1px 7px;font-weight:700;font-size:11px;white-space:nowrap">${esc(rS(s))}</span>`; };
+  const kpi = (n, label, color) => `<td style="padding:4px;width:16.6%"><div style="background:#F6F7F6;border:1px solid #D5D9D7;border-top:3px solid ${color || HD};border-radius:8px;padding:10px 12px"><div style="font-size:22px;font-weight:700;color:${color || HD}">${n}</div><div style="font-size:11px;color:#5B676C">${label}</div></div></td>`;
+  const f = new Intl.DateTimeFormat(RLOC(), { day: "numeric", month: "numeric" }), tf = new Intl.DateTimeFormat(RLOC(), { hour: "numeric", minute: "2-digit" }), full = new Intl.DateTimeFormat(RLOC(), { dateStyle: "medium", timeStyle: "short" });
+  const h2 = x => `<h2 style="font-size:15px;margin:22px 0 8px;color:${HD};border-${al}:4px solid ${A};padding-${al}:8px">${x}</h2>`;
+  const table = (heads, rows) => `<table style="width:100%;border-collapse:collapse;margin-bottom:6px"><thead><tr>${heads.map(x => `<th ${th}>${x}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
   const findingsRows = d.findings.length ? d.findings.map(r => `<tr>
       <td ${td}>${esc(f.format(r.date))} ${esc(tf.format(r.date))}</td><td ${td}>${ltr(r.area)}</td><td ${td}><b>${ltr(r.equipment)}</b></td><td ${td}>${ltr(r.part)}</td>
       <td ${td}>${chip(r.status)}</td><td ${td}>${esc(r.note)}</td><td ${td}>${esc(r.inspector)}</td></tr>
       ${opt.photos && r.photos.length ? `<tr><td ${td} colspan="7">${r.photos.map(src => `<img src="${src}" style="height:130px;margin:2px;border-radius:4px;border:1px solid #D5D9D7">`).join("")}</td></tr>` : ""}`).join("")
-    : `<tr><td ${td} colspan="7">${L("مفيش ملاحظات في الفترة دي.", "No findings in this period.")}</td></tr>`;
-  const missedRows = d.missed.length ? d.missed.map(x => `<tr><td ${td}><b>${ltr(x.e.tag)}</b></td><td ${td}>${ltr(areaName(x.e))}</td><td ${td}>${esc(FREQ_LABEL[x.f])}</td><td ${td}>${x.n}</td><td ${td}>${esc(f.format(x.last))}</td></tr>`).join("")
-    : `<tr><td ${td} colspan="5">${L("مفيش فحوصات فاتت.", "Nothing overdue.")}</td></tr>`;
-  const inspRows = d.list.length ? d.list.map(x => { const c = x.counts || {}; return `<tr><td ${td}>${esc(f.format(x.createdAt.toDate()))} ${esc(tf.format(x.createdAt.toDate()))}</td><td ${td}><b>${ltr(x.equipment)}</b></td><td ${td}>${ltr(x.area || "")}</td><td ${td}>${esc(FREQ_LABEL[x.freq] || "")}</td><td ${td}>${esc(x.inspectorName || "")}</td><td ${td}>${c.good || 0} / ${c.monitor || 0} / ${c.action || 0}</td><td ${td}>${esc(x.notes || "")}</td></tr>`; }).join("")
-    : `<tr><td ${td} colspan="7">${L("مفيش تفتيشات في الفترة دي.", "No inspections in this period.")}</td></tr>`;
+    : `<tr><td ${td} colspan="7">${R("مفيش ملاحظات في الفترة دي.", "No findings in this period.")}</td></tr>`;
+  const missedRows = d.missed.length ? d.missed.map(x => `<tr><td ${td}><b>${ltr(x.e.tag)}</b></td><td ${td}>${ltr(areaName(x.e))}</td><td ${td}>${esc(rF(x.f))}</td><td ${td}>${x.n}</td><td ${td}>${esc(f.format(x.last))}</td></tr>`).join("")
+    : `<tr><td ${td} colspan="5">${R("مفيش فحوصات فاتت.", "Nothing overdue.")}</td></tr>`;
+  const inspRows = d.list.length ? d.list.map(x => { const c = x.counts || {}; return `<tr><td ${td}>${esc(f.format(x.createdAt.toDate()))} ${esc(tf.format(x.createdAt.toDate()))}</td><td ${td}><b>${ltr(x.equipment)}</b></td><td ${td}>${ltr(x.area || "")}</td><td ${td}>${esc(rF(x.freq))}</td><td ${td}>${esc(x.inspectorName || "")}</td><td ${td}>${c.good || 0} / ${c.monitor || 0} / ${c.action || 0}</td><td ${td}>${esc(x.notes || "")}</td></tr>`; }).join("")
+    : `<tr><td ${td} colspan="7">${R("مفيش تفتيشات في الفترة دي.", "No inspections in this period.")}</td></tr>`;
   const allRows = d.showAll ? d.all.map(r => `<tr><td ${td}>${esc(f.format(r.date))}</td><td ${td}>${ltr(r.equipment)}</td><td ${td}>${ltr(r.part)}</td><td ${td}>${chip(r.status)}</td><td ${td}>${esc(r.note)}</td></tr>`).join("") : "";
-  const h2 = t => `<h2 style="font-size:15px;margin:22px 0 8px;color:#1B2428;border-${LANG === "en" ? "left" : "right"}:4px solid #E8A600;padding-${LANG === "en" ? "left" : "right"}:8px">${t}</h2>`;
-  const table = (heads, rows) => `<table style="width:100%;border-collapse:collapse;margin-bottom:6px"><thead><tr>${heads.map(x => `<th ${th}>${x}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
-  return `<!doctype html><html lang="${LANG}" dir="${dir}"><head><meta charset="utf-8"><title>${esc(d.title)}</title>
+  const sigs = (t.signatures || []).filter(s => s.role || s.name);
+  const sigHtml = sigs.length ? `<table style="width:100%;border-collapse:separate;border-spacing:10px 0;margin-top:30px"><tr>${sigs.map(s => `<td style="vertical-align:top;text-align:${al};width:${Math.floor(100 / sigs.length)}%">
+      <div style="font-size:12px;color:#5B676C">${esc(tw(s.role))}</div>
+      <div style="font-size:13px;font-weight:700;margin-top:2px;min-height:18px">${esc((s.name || "").replace("{name}", d.by))}</div>
+      <div style="border-bottom:1px solid #1B2428;height:38px;margin-top:6px"></div>
+      <div style="font-size:11px;color:#5B676C;margin-top:4px">${R("التوقيع / التاريخ", "Signature / Date")}</div></td>`).join("")}</tr></table>` : "";
+  const sc = t.sections;
+  return `<!doctype html><html lang="${RLANG}" dir="${dir}"><head><meta charset="utf-8"><title>${esc(d.title)} ${esc(d.no)}</title>
 <style>@page{size:A4;margin:12mm}body{margin:0;padding:18px;font-family:"IBM Plex Sans Arabic",Tahoma,Arial,sans-serif;color:#1B2428;background:#fff}
 @media print{body{padding:0}tr{page-break-inside:avoid}}</style></head><body dir="${dir}">
-<div style="background:#1B2428;color:#fff;border-radius:10px;padding:16px 18px;margin-bottom:14px">
-  <div style="font-size:20px;font-weight:700">${esc(d.title)}</div>
-  <div style="font-size:13px;opacity:.85;margin-top:2px">${esc(d.period)}</div>
-  <div style="font-size:12px;opacity:.75;margin-top:8px">${L("الـ Area", "Area")}: ${d.areaPath ? ltr(d.areaPath) : esc(L("كل المصنع", "Whole plant"))} &nbsp;|&nbsp; ${L("المفتش", "Inspector")}: ${esc(d.inspector)} &nbsp;|&nbsp; ${L("اتعمل بواسطة", "Prepared by")} ${esc(d.by)}${SEP}${esc(fmt.format(d.at))}</div>
-</div>
-<table style="width:100%;border-collapse:separate;border-spacing:0;margin-bottom:4px"><tr>
-  ${kpi(d.totals.inspections, L("تفتيشات", "Inspections"))}${kpi(d.totals.parts, L("Parts اتفحصت", "Parts checked"))}
-  ${kpi(d.totals.good, L("سليم", "Good"), "#2F7A4B")}${kpi(d.totals.monitor, L("متابعة", "Monitor"), "#A86400")}${kpi(d.totals.action, L("يحتاج إصلاح", "Needs repair"), "#B42318")}
-  ${kpi(d.sched.pct === null ? "-" : d.sched.pct + "%", L("الالتزام بالجدول", "Schedule compliance"), d.sched.pct !== null && d.sched.pct < 80 ? "#B42318" : "#2F7A4B")}
+<table style="width:100%;border-collapse:collapse;background:${HD};color:#fff;border-radius:10px;border-bottom:4px solid ${A}"><tr>
+  ${t.logo ? `<td style="padding:14px 16px;width:1%;vertical-align:middle"><img src="${t.logo}" style="max-height:64px;max-width:170px;background:#fff;border-radius:6px;padding:4px;display:block"></td>` : ""}
+  <td style="padding:14px 16px;vertical-align:middle;text-align:${al}">
+    ${t.company ? `<div style="font-size:13px;opacity:.85">${esc(t.company)}</div>` : ""}
+    ${t.dept ? `<div style="font-size:12px;opacity:.7">${esc(tw(t.dept))}</div>` : ""}
+    <div style="font-size:20px;font-weight:700;margin-top:4px">${esc(d.title)}</div>
+    <div style="font-size:13px;opacity:.85">${esc(d.period)}</div>
+  </td>
+  <td style="padding:14px 16px;vertical-align:middle;text-align:${ar_};white-space:nowrap;font-size:12px">
+    <div style="opacity:.7">${R("رقم التقرير", "Report No.")}</div><div style="font-size:15px;font-weight:700;color:${A}" dir="ltr">${esc(d.no)}</div>
+    <div style="opacity:.7;margin-top:6px">${R("تاريخ الإصدار", "Issued")}</div><div>${esc(full.format(d.at))}</div>
+  </td></tr></table>
+<table style="width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:12px"><tr>
+  <td style="padding:4px 0;color:#5B676C">${R("الـ Area", "Area")}: <b style="color:#1B2428">${d.areaPath ? ltr(d.areaPath) : esc(R("كل المصنع", "Whole plant"))}</b></td>
+  <td style="padding:4px 0;color:#5B676C">${R("المفتش", "Inspector")}: <b style="color:#1B2428">${esc(d.inspector)}</b></td>
+  <td style="padding:4px 0;color:#5B676C">${R("اتعمل بواسطة", "Prepared by")}: <b style="color:#1B2428">${esc(d.by)}</b></td>
 </tr></table>
-<div style="font-size:11px;color:#5B676C;margin-bottom:4px">${L("فحوصات معادها في الفترة", "Inspections due in period")}: ${d.sched.due} — ${L("اتعملت", "done")} ${d.sched.done}${SEP}${L("فاتت", "missed")} ${d.sched.missed}${SEP}${L("لسه مفتوحة", "still open")} ${d.sched.open}</div>
-${h2(L("الملاحظات والأعطال", "Findings"))}
-${table([L("التاريخ", "Date"), L("المكان", "Location"), L("المعدة", "Equipment"), "Part", L("الحالة", "Status"), L("الملاحظة", "Note"), L("المفتش", "Inspector")], findingsRows)}
-${h2(L("فحوصات فات معادها", "Overdue inspections"))}
-${table([L("المعدة", "Equipment"), L("المكان", "Location"), L("التكرار", "Frequency"), L("عدد المرات", "Times"), L("آخرها", "Last due")], missedRows)}
-${h2(L("التفتيشات", "Inspections"))}
-${table([L("التاريخ", "Date"), L("المعدة", "Equipment"), L("المكان", "Location"), L("التكرار", "Frequency"), L("المفتش", "Inspector"), L("سليم / متابعة / إصلاح", "Good / Monitor / Repair"), L("ملاحظات عامة", "General notes")], inspRows)}
-${d.showAll ? h2(L("كل البنود", "All items")) + table([L("التاريخ", "Date"), L("المعدة", "Equipment"), "Part", L("الحالة", "Status"), L("الملاحظة", "Note")], allRows) : ""}
-<div style="font-size:10px;color:#8A9599;margin-top:18px">${L("دليل الفحص الميكانيكي", "Mechanical Inspection Guide")}</div>
+${t.intro ? `<p style="font-size:13px;line-height:1.7;margin:8px 0">${para(t.intro)}</p>` : ""}
+${d.summary ? `<div style="background:#FFF8E6;border:1px solid ${A};border-${al}:5px solid ${A};border-radius:8px;padding:10px 14px;margin:10px 0"><div style="font-weight:700;font-size:13px;margin-bottom:4px">${R("الملخص والتوصيات", "Summary & recommendations")}</div><div style="font-size:13px;line-height:1.7">${para(d.summary)}</div></div>` : ""}
+${sc.kpis ? `<table style="width:100%;border-collapse:separate;border-spacing:0;margin:8px 0 4px"><tr>
+  ${kpi(d.totals.inspections, R("تفتيشات", "Inspections"))}${kpi(d.totals.parts, R("Parts اتفحصت", "Parts checked"))}
+  ${kpi(d.totals.good, R("سليم", "Good"), "#2F7A4B")}${kpi(d.totals.monitor, R("متابعة", "Monitor"), "#A86400")}${kpi(d.totals.action, R("يحتاج إصلاح", "Needs repair"), "#B42318")}
+  ${kpi(d.sched.pct === null ? "-" : d.sched.pct + "%", R("الالتزام بالجدول", "Schedule compliance"), d.sched.pct !== null && d.sched.pct < 80 ? "#B42318" : "#2F7A4B")}
+</tr></table>
+<div style="font-size:11px;color:#5B676C;margin-bottom:4px">${R("فحوصات معادها في الفترة", "Inspections due in period")}: ${d.sched.due} — ${R("اتعملت", "done")} ${d.sched.done}${SEP}${R("فاتت", "missed")} ${d.sched.missed}${SEP}${R("لسه مفتوحة", "still open")} ${d.sched.open}</div>` : ""}
+${sc.findings ? h2(R("الملاحظات والأعطال", "Findings")) + table([R("التاريخ", "Date"), R("المكان", "Location"), R("المعدة", "Equipment"), "Part", R("الحالة", "Status"), R("الملاحظة", "Note"), R("المفتش", "Inspector")], findingsRows) : ""}
+${sc.overdue ? h2(R("فحوصات فات معادها", "Overdue inspections")) + table([R("المعدة", "Equipment"), R("المكان", "Location"), R("التكرار", "Frequency"), R("عدد المرات", "Times"), R("آخرها", "Last due")], missedRows) : ""}
+${sc.inspections ? h2(R("التفتيشات", "Inspections")) + table([R("التاريخ", "Date"), R("المعدة", "Equipment"), R("المكان", "Location"), R("التكرار", "Frequency"), R("المفتش", "Inspector"), R("سليم / متابعة / إصلاح", "Good / Monitor / Repair"), R("ملاحظات عامة", "General notes")], inspRows) : ""}
+${d.showAll ? h2(R("كل البنود", "All items")) + table([R("التاريخ", "Date"), R("المعدة", "Equipment"), "Part", R("الحالة", "Status"), R("الملاحظة", "Note")], allRows) : ""}
+${sigHtml}
+${t.footer ? `<p style="font-size:12px;line-height:1.7;margin:18px 0 0;color:#3A464B">${para(t.footer)}</p>` : ""}
+<div style="font-size:10px;color:#8A9599;margin-top:14px;border-top:1px solid #E1E4E2;padding-top:6px">${esc(d.no)} · ${R("دليل الفحص الميكانيكي", "Mechanical Inspection Guide")}</div>
 </body></html>`;
 }
 
 function reportXlsx(d) {
+  RLANG = d.lang;
   const ds = x => `${ymd(x)} ${String(x.getHours()).padStart(2, "0")}:${String(x.getMinutes()).padStart(2, "0")}`;
-  const H = (ar, en) => L(ar, en);
   return makeXlsx([
-    { name: H("ملخص", "Summary"), widths: [34, 50], rows: [[H("البند", "Item"), H("القيمة", "Value")],
-      [H("التقرير", "Report"), d.title], [H("الفترة", "Period"), d.period], [H("الـ Area", "Area"), d.areaPath || H("كل المصنع", "Whole plant")], [H("المفتش", "Inspector"), d.inspector],
-      [H("تفتيشات", "Inspections"), d.totals.inspections], [H("Parts اتفحصت", "Parts checked"), d.totals.parts], [H("سليم", "Good"), d.totals.good || 0],
-      [H("متابعة", "Monitor"), d.totals.monitor || 0], [H("يحتاج إصلاح", "Needs repair"), d.totals.action || 0],
-      [H("فحوصات معادها في الفترة", "Due in period"), d.sched.due], [H("اتعملت", "Done"), d.sched.done], [H("فاتت", "Missed"), d.sched.missed], [H("لسه مفتوحة", "Still open"), d.sched.open],
-      [H("الالتزام بالجدول %", "Schedule compliance %"), d.sched.pct === null ? "-" : d.sched.pct], [H("اتعمل بواسطة", "Prepared by"), `${d.by} ${ds(d.at)}`]] },
-    { name: H("الملاحظات", "Findings"), widths: [17, 34, 24, 34, 13, 40, 18], rows: [[H("التاريخ", "Date"), H("المكان", "Location"), H("المعدة", "Equipment"), "Part", H("الحالة", "Status"), H("الملاحظة", "Note"), H("المفتش", "Inspector")],
-      ...d.findings.map(r => [ds(r.date), r.area, r.equipment, r.part, STATUS[r.status] || r.status, r.note, r.inspector])] },
-    { name: H("فات معادها", "Overdue"), widths: [26, 36, 14, 10, 14], rows: [[H("المعدة", "Equipment"), H("المكان", "Location"), H("التكرار", "Frequency"), H("عدد المرات", "Times"), H("آخرها", "Last due")],
-      ...d.missed.map(x => [x.e.tag, areaName(x.e), FREQ_LABEL[x.f], x.n, ymd(x.last)])] },
-    { name: H("التفتيشات", "Inspections"), widths: [17, 26, 34, 12, 18, 8, 10, 10, 40], rows: [[H("التاريخ", "Date"), H("المعدة", "Equipment"), H("المكان", "Location"), H("التكرار", "Frequency"), H("المفتش", "Inspector"), H("سليم", "Good"), H("متابعة", "Monitor"), H("إصلاح", "Repair"), H("ملاحظات عامة", "General notes")],
-      ...d.list.map(x => { const c = x.counts || {}; return [ds(x.createdAt.toDate()), x.equipment, x.area || "", FREQ_LABEL[x.freq] || "", x.inspectorName || "", c.good || 0, c.monitor || 0, c.action || 0, x.notes || ""]; })] },
-    { name: H("كل البنود", "All items"), widths: [17, 26, 34, 34, 13, 40, 18], rows: [[H("التاريخ", "Date"), H("المعدة", "Equipment"), H("المكان", "Location"), "Part", H("الحالة", "Status"), H("الملاحظة", "Note"), H("المفتش", "Inspector")],
-      ...d.all.map(r => [ds(r.date), r.equipment, r.area, r.part, STATUS[r.status] || r.status, r.note, r.inspector])] }
-  ], LANG !== "en");
+    { name: R("ملخص", "Summary"), widths: [34, 60], rows: [[R("البند", "Item"), R("القيمة", "Value")],
+      [R("التقرير", "Report"), d.title], [R("رقم التقرير", "Report No."), d.no], [R("الفترة", "Period"), d.period], [R("الـ Area", "Area"), d.areaPath || R("كل المصنع", "Whole plant")], [R("المفتش", "Inspector"), d.inspector],
+      ...(d.summary ? [[R("الملخص والتوصيات", "Summary & recommendations"), d.summary]] : []),
+      [R("تفتيشات", "Inspections"), d.totals.inspections], [R("Parts اتفحصت", "Parts checked"), d.totals.parts], [R("سليم", "Good"), d.totals.good || 0],
+      [R("متابعة", "Monitor"), d.totals.monitor || 0], [R("يحتاج إصلاح", "Needs repair"), d.totals.action || 0],
+      [R("فحوصات معادها في الفترة", "Due in period"), d.sched.due], [R("اتعملت", "Done"), d.sched.done], [R("فاتت", "Missed"), d.sched.missed], [R("لسه مفتوحة", "Still open"), d.sched.open],
+      [R("الالتزام بالجدول %", "Schedule compliance %"), d.sched.pct === null ? "-" : d.sched.pct], [R("اتعمل بواسطة", "Prepared by"), `${d.by} ${ds(d.at)}`]] },
+    { name: R("الملاحظات", "Findings"), widths: [17, 34, 24, 34, 13, 40, 18], rows: [[R("التاريخ", "Date"), R("المكان", "Location"), R("المعدة", "Equipment"), "Part", R("الحالة", "Status"), R("الملاحظة", "Note"), R("المفتش", "Inspector")],
+      ...d.findings.map(r => [ds(r.date), r.area, r.equipment, r.part, rS(r.status), r.note, r.inspector])] },
+    { name: R("فات معادها", "Overdue"), widths: [26, 36, 14, 10, 14], rows: [[R("المعدة", "Equipment"), R("المكان", "Location"), R("التكرار", "Frequency"), R("عدد المرات", "Times"), R("آخرها", "Last due")],
+      ...d.missed.map(x => [x.e.tag, areaName(x.e), rF(x.f), x.n, ymd(x.last)])] },
+    { name: R("التفتيشات", "Inspections"), widths: [17, 26, 34, 12, 18, 8, 10, 10, 40], rows: [[R("التاريخ", "Date"), R("المعدة", "Equipment"), R("المكان", "Location"), R("التكرار", "Frequency"), R("المفتش", "Inspector"), R("سليم", "Good"), R("متابعة", "Monitor"), R("إصلاح", "Repair"), R("ملاحظات عامة", "General notes")],
+      ...d.list.map(x => { const c = x.counts || {}; return [ds(x.createdAt.toDate()), x.equipment, x.area || "", rF(x.freq), x.inspectorName || "", c.good || 0, c.monitor || 0, c.action || 0, x.notes || ""]; })] },
+    { name: R("كل البنود", "All items"), widths: [17, 26, 34, 34, 13, 40, 18], rows: [[R("التاريخ", "Date"), R("المعدة", "Equipment"), R("المكان", "Location"), "Part", R("الحالة", "Status"), R("الملاحظة", "Note"), R("المفتش", "Inspector")],
+      ...d.all.map(r => [ds(r.date), r.equipment, r.area, r.part, rS(r.status), r.note, r.inspector])] }
+  ], RLANG !== "en");
 }
 
-$("#rp-run").addEventListener("click", async () => {
-  const btn = $("#rp-run"), err = $("#rp-err"); err.textContent = ""; btn.disabled = true; btn.textContent = L("جاري التجهيز...", "Preparing...");
+// the HTML that goes out: the edited preview if the user changed the text, otherwise freshly built
+function finalHtml(d, photos) {
+  if (reportEdited) {
+    const doc2 = $("#rp-frame").contentDocument, html = "<!doctype html>" + doc2.documentElement.outerHTML.replace(/ contenteditable="[^"]*"/g, "");
+    return photos ? html : html.replace(/<img[^>]+src="data:image[^"]*"[^>]*>/g, "");
+  }
+  return reportHtml(d, { photos });
+}
+function showPreview() {
+  const fr = $("#rp-frame"); $("#rp-out").hidden = false; reportEdited = false; setEditMode(false);
+  fr.onload = () => { try { fr.style.height = (fr.contentDocument.documentElement.scrollHeight + 20) + "px"; } catch {} };
+  fr.srcdoc = reportHtml(report, { photos: true });
+}
+function setEditMode(on) {
+  const fr = $("#rp-frame"), b = $("#rp-edit");
+  b.setAttribute("aria-pressed", on); b.textContent = on ? L("خلصت التعديل", "Done editing") : L("تعديل النص", "Edit text");
+  $("#rp-edit-hint").hidden = !on; fr.classList.toggle("editing", on);
   try {
-    await loadData();
-    report = await buildReport();
-    const fr = $("#rp-frame"); $("#rp-out").hidden = false;
-    fr.onload = () => { try { fr.style.height = (fr.contentDocument.documentElement.scrollHeight + 20) + "px"; } catch {} };
-    fr.srcdoc = reportHtml(report, { photos: true });
-  } catch (e) { err.textContent = authMsg(e); }
+    const body = fr.contentDocument?.body; if (!body) return;
+    if (on) body.contentEditable = "true"; else body.removeAttribute("contenteditable");
+    if (on) { reportEdited = true; body.focus(); }
+    fr.style.height = (fr.contentDocument.documentElement.scrollHeight + 20) + "px";
+  } catch {}
+}
+$("#rp-edit").addEventListener("click", () => setEditMode($("#rp-edit").getAttribute("aria-pressed") !== "true"));
+
+$("#rp-run").addEventListener("click", async () => {
+  if (reportEdited && !confirm(L("التعديلات اللي عملتها في نص التقرير هتتمسح. تكمل؟", "Your text edits will be lost. Continue?"))) return;
+  const btn = $("#rp-run"), err = $("#rp-err"); err.textContent = ""; btn.disabled = true; btn.textContent = L("جاري التجهيز...", "Preparing...");
+  try { await loadData(); report = await buildReport(); showPreview(); }
+  catch (e) { err.textContent = authMsg(e); }
   btn.disabled = false; btn.textContent = L("عرض التقرير", "Show report");
 });
 $("#rp-pdf").addEventListener("click", () => {
   if (!report) return;
+  setEditMode(false);
   const w = window.open("", "_blank");
-  if (w) { w.document.open(); w.document.write(reportHtml(report, { photos: $("#rp-photos").checked })); w.document.close(); setTimeout(() => { w.focus(); w.print(); }, 600); }
+  if (w) { w.document.open(); w.document.write(finalHtml(report, $("#rp-photos").checked)); w.document.close(); setTimeout(() => { w.focus(); w.print(); }, 600); }
   else { const fr = $("#rp-frame"); fr.contentWindow.focus(); fr.contentWindow.print(); }
 });
 $("#rp-xlsx").addEventListener("click", () => { if (report) download(reportXlsx(report), report.fileBase + ".xlsx"); });
-$("#rp-mail").addEventListener("click", () => { if (report) emailDialog(report); });
+$("#rp-mail").addEventListener("click", () => { if (report) { setEditMode(false); emailDialog(report); } });
+
+/* ---- report template (admin) ---- */
+async function compressLogo(file) {
+  const img = await new Promise((res, rej) => { const u = URL.createObjectURL(file), im = new Image(); im.onload = () => { URL.revokeObjectURL(u); res(im); }; im.onerror = () => rej(new Error("bad")); im.src = u; });
+  const s = Math.min(1, 360 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement("canvas");
+  c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+  let out = c.toDataURL("image/png"); if (out.length > 180000) out = c.toDataURL("image/jpeg", 0.85);
+  if (out.length > 250000) throw new Error("too_big");
+  return out;
+}
+$("#rp-design").addEventListener("click", () => {
+  const t = tpl(); let logo = t.logo;
+  const sig = (s, i) => `<div class="sig-row"><input class="sg-role" data-i="${i}" value="${esc(s?.role || "")}" placeholder="${L("الوظيفة، مثلًا: اعتمده", "Role, e.g. Approved by")}" aria-label="${L("وظيفة التوقيع", "Signature role")} ${i + 1}"><input class="sg-name" data-i="${i}" value="${esc(s?.name || "")}" placeholder="${L("الاسم", "Name")}" aria-label="${L("اسم التوقيع", "Signature name")} ${i + 1}"></div>`;
+  const ttl = (k, label) => `<div class="field"><label for="tp-t-${k}">${label}</label><input id="tp-t-${k}" value="${esc(t.titles[k] || "")}" placeholder="${L("الافتراضي", "Default")}"></div>`;
+  openDlg(`<h2>${L("شكل التقرير", "Report design")}</h2>
+    <div class="tpl-grid">
+      <div class="field"><label for="tp-company">${L("اسم الشركة", "Company name")}</label><input id="tp-company" value="${esc(t.company)}" placeholder="${L("مثلًا: شركة أسمنت ...", "e.g. ... Cement Company")}"></div>
+      <div class="field"><label for="tp-dept">${L("اسم القسم", "Department")}</label><input id="tp-dept" value="${esc(t.dept)}"></div>
+      <div class="field"><label for="tp-logo">${L("اللوجو", "Logo")}</label><input type="file" id="tp-logo" accept="image/*">
+        <div class="logo-prev" id="tp-logo-prev">${logo ? `<img src="${logo}" alt=""><button class="btn ghost small" type="button" id="tp-logo-rm">${L("شيل اللوجو", "Remove")}</button>` : ""}</div></div>
+      <div class="field"><label for="tp-lang">${L("لغة التقرير الافتراضية", "Default report language")}</label><select id="tp-lang"><option value="">${L("لغة الموقع", "Site language")}</option><option value="ar" ${t.lang === "ar" ? "selected" : ""}>العربية</option><option value="en" ${t.lang === "en" ? "selected" : ""}>English</option></select></div>
+      <div class="field"><label for="tp-header">${L("لون الهيدر والجداول", "Header & table colour")}</label><input type="color" id="tp-header" value="${esc(t.header)}"></div>
+      <div class="field"><label for="tp-accent">${L("لون التمييز", "Accent colour")}</label><input type="color" id="tp-accent" value="${esc(t.accent)}"></div>
+    </div>
+    <h3>${L("عناوين التقارير", "Report titles")}</h3>
+    <div class="tpl-grid">${ttl("daily", L("اليومي", "Daily"))}${ttl("weekly", L("الأسبوعي", "Weekly"))}${ttl("monthly", L("الشهري", "Monthly"))}${ttl("custom", L("الفترة المحددة", "Custom period"))}</div>
+    <div class="field"><label for="tp-intro">${L("نص في أول التقرير (اختياري)", "Opening text (optional)")}</label><textarea id="tp-intro" rows="2">${esc(t.intro)}</textarea></div>
+    <div class="field"><label for="tp-footer">${L("نص في آخر التقرير (اختياري)", "Closing text (optional)")}</label><textarea id="tp-footer" rows="2">${esc(t.footer)}</textarea></div>
+    <h3>${L("الأجزاء اللي تظهر", "Sections to show")}</h3>
+    <div class="checks">
+      <label class="check"><input type="checkbox" id="tp-s-kpis" ${t.sections.kpis ? "checked" : ""}> ${L("الأرقام والالتزام", "Numbers & compliance")}</label>
+      <label class="check"><input type="checkbox" id="tp-s-findings" ${t.sections.findings ? "checked" : ""}> ${L("الملاحظات والأعطال", "Findings")}</label>
+      <label class="check"><input type="checkbox" id="tp-s-overdue" ${t.sections.overdue ? "checked" : ""}> ${L("فات معادها", "Overdue")}</label>
+      <label class="check"><input type="checkbox" id="tp-s-inspections" ${t.sections.inspections ? "checked" : ""}> ${L("قايمة التفتيشات", "Inspections list")}</label>
+    </div>
+    <h3>${L("التوقيعات", "Signatures")}</h3>
+    <p class="hint" style="margin-bottom:8px">${L("اكتب {name} مكان الاسم علشان يتحط اسم اللي عمل التقرير تلقائي. سيب السطر فاضي علشان مايظهرش.", "Write {name} to insert the name of whoever prepares the report. Leave a row empty to hide it.")}</p>
+    ${[0, 1, 2].map(i => sig(t.signatures[i], i)).join("")}
+    <p class="err" id="tp-err" role="alert"></p>
+    <div class="dlg-actions"><button class="btn ghost small" type="button" id="tp-reset">${L("رجّع الافتراضي", "Reset to default")}</button><span style="flex:1"></span>
+      <button class="btn ghost" type="button" id="tp-cancel">${L("إلغاء", "Cancel")}</button><button class="btn" type="button" id="tp-save">${L("حفظ", "Save")}</button></div>`);
+  $("#dlg").classList.add("wide");
+  const paintLogo = () => {
+    $("#tp-logo-prev").innerHTML = logo ? `<img src="${logo}" alt=""><button class="btn ghost small" type="button" id="tp-logo-rm">${L("شيل اللوجو", "Remove")}</button>` : "";
+    $("#tp-logo-rm")?.addEventListener("click", () => { logo = ""; paintLogo(); });
+  };
+  paintLogo();
+  $("#tp-logo").addEventListener("change", async ev => {
+    const file = ev.target.files[0]; if (!file) return;
+    try { logo = await compressLogo(file); paintLogo(); } catch { $("#tp-err").textContent = L("الصورة دي مش هتنفع كلوجو. جرّب صورة أصغر.", "This image can't be used as a logo. Try a smaller one."); }
+  });
+  $("#tp-cancel").addEventListener("click", () => { closeDlg(); $("#dlg").classList.remove("wide"); });
+  const save = async data => {
+    try {
+      await setDoc(doc(db, "settings", "app"), { report: data, updatedAt: serverTimestamp() }, { merge: true });
+      settings.report = data; closeDlg(); $("#dlg").classList.remove("wide"); toast(L("اتحفظ شكل التقرير", "Report design saved"));
+      if (report && !reportEdited) { report.t = tpl(); report.title = report.t.titles[report.kind] || report.title; showPreview(); }
+    } catch (e) { $("#tp-err").textContent = authMsg(e); }
+  };
+  $("#tp-reset").addEventListener("click", () => { if (confirm(L("ترجّع شكل التقرير للافتراضي؟", "Reset the report design to default?"))) save({}); });
+  $("#tp-save").addEventListener("click", () => {
+    const v = id => $(id).value.trim();
+    save({ company: v("#tp-company").slice(0, 120), dept: v("#tp-dept").slice(0, 120), logo, lang: $("#tp-lang").value, header: $("#tp-header").value, accent: $("#tp-accent").value,
+      titles: { daily: v("#tp-t-daily"), weekly: v("#tp-t-weekly"), monthly: v("#tp-t-monthly"), custom: v("#tp-t-custom") },
+      intro: v("#tp-intro").slice(0, 2000), footer: v("#tp-footer").slice(0, 2000),
+      sections: { kpis: $("#tp-s-kpis").checked, findings: $("#tp-s-findings").checked, overdue: $("#tp-s-overdue").checked, inspections: $("#tp-s-inspections").checked },
+      signatures: [0, 1, 2].map(i => ({ role: document.querySelector(`.sg-role[data-i="${i}"]`).value.trim().slice(0, 60), name: document.querySelector(`.sg-name[data-i="${i}"]`).value.trim().slice(0, 80) })) });
+  });
+});
 
 function reportText(d) {
-  const lines = [d.title, d.period, `${L("تفتيشات", "Inspections")}: ${d.totals.inspections} | ${L("متابعة", "Monitor")}: ${d.totals.monitor || 0} | ${L("يحتاج إصلاح", "Needs repair")}: ${d.totals.action || 0}`, ""];
-  d.findings.slice(0, 40).forEach(r => lines.push(`- ${r.equipment} / ${r.part}: ${STATUS[r.status]}${r.note ? " - " + r.note : ""}`));
+  RLANG = d.lang;
+  const lines = [`${d.title} (${d.no})`, d.period, `${R("تفتيشات", "Inspections")}: ${d.totals.inspections} | ${R("متابعة", "Monitor")}: ${d.totals.monitor || 0} | ${R("يحتاج إصلاح", "Needs repair")}: ${d.totals.action || 0}`, ""];
+  if (d.summary) lines.push(d.summary, "");
+  d.findings.slice(0, 40).forEach(r => lines.push(`- ${r.equipment} / ${r.part}: ${rS(r.status)}${r.note ? " - " + r.note : ""}`));
   if (d.findings.length > 40) lines.push(`... +${d.findings.length - 40}`);
   return lines.join("\n");
 }
@@ -2332,7 +2497,8 @@ function emailDialog(d) {
     <div class="field"><label for="em-from">${L("من", "From")}</label><select id="em-from">${opts.map(([k, v]) => `<option value="${esc(v)}">${esc(v)}${k === "work" ? L(" (الشغل)", " (work)") : L(" (الشخصي)", " (personal)")}</option>`).join("")}</select></div>
     <div class="field"><label for="em-to">${L("إلى", "To")}</label><input id="em-to" dir="ltr" value="${esc(s.defaultTo || "")}" placeholder="a@x.com, b@y.com"></div>
     <div class="field"><label for="em-cc">${L("نسخة (CC)", "CC")}</label><input id="em-cc" dir="ltr" value="${esc(s.defaultCc || "")}"></div>
-    <div class="field"><label for="em-sub">${L("الموضوع", "Subject")}</label><input id="em-sub" value="${esc(`${d.title} - ${d.period}`)}"></div>
+    <div class="field"><label for="em-sub">${L("الموضوع", "Subject")}</label><input id="em-sub" value="${esc(`${d.title} ${d.no} - ${d.period}`)}"></div>
+    <div class="field"><label for="em-msg">${L("رسالة قبل التقرير (اختياري)", "Message above the report (optional)")}</label><textarea id="em-msg" rows="2"></textarea></div>
     <div class="checks"><label class="check"><input type="checkbox" id="em-pdf" checked> ${L("مرفق PDF", "Attach PDF")}</label><label class="check"><input type="checkbox" id="em-xlsx" checked> ${L("مرفق Excel", "Attach Excel")}</label></div>
     <p class="hint">${s.scriptUrl ? L("التقرير هيتكتب في جسم الإيميل كمان.", "The report is also written in the email body.") : L("السكريبت مش متظبط لسه، فهيفتحلك الإيميل جاهز وانت ترفق الملف.", "The script is not set up yet, so your email app will open and you attach the file.")}</p>
     <p class="err" id="em-err" role="alert"></p>
@@ -2340,31 +2506,33 @@ function emailDialog(d) {
   $("#em-cancel").addEventListener("click", closeDlg);
   $("#em-go").addEventListener("click", async () => {
     const split = v => v.split(/[,;\s]+/).map(x => x.trim()).filter(Boolean);
-    const from = $("#em-from").value, to = split($("#em-to").value), cc = split($("#em-cc").value), subject = $("#em-sub").value.trim();
+    const from = $("#em-from").value, to = split($("#em-to").value), cc = split($("#em-cc").value), subject = $("#em-sub").value.trim(), msg = $("#em-msg").value.trim();
     const err = $("#em-err"), bad = [...to, ...cc].find(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
     if (!to.length) return (err.textContent = L("اكتب إيميل واحد على الأقل في إلى.", "Enter at least one recipient."));
     if (bad) return (err.textContent = L(`الإيميل ده مش مظبوط: ${bad}`, `This email is not valid: ${bad}`));
     const go = $("#em-go"); go.disabled = true; go.textContent = L("جاري الإرسال...", "Sending...");
     const xlsx = $("#em-xlsx").checked ? reportXlsx(d) : null;
-    if (!s.scriptUrl) { composeFallback(from, to, cc, subject, d, xlsx); closeDlg(); return; }
+    const msgHtml = msg ? `<div dir="${d.lang === "en" ? "ltr" : "rtl"}" style="font-family:Tahoma,Arial,sans-serif;font-size:14px;line-height:1.7;margin-bottom:14px">${esc(msg).replace(/\n/g, "<br>")}</div>` : "";
+    if (!s.scriptUrl) { composeFallback(from, to, cc, subject, d, xlsx, msg); closeDlg(); return; }
     try {
       const atts = xlsx ? [{ name: d.fileBase + ".xlsx", mime: xlsx.type, b64: await blobToB64(xlsx) }] : [];
-      const r = await callScript("email", { from, fromName: s.senderName || profile.name, to, cc, subject, text: reportText(d), html: reportHtml(d, { photos: false }),
-        pdf: $("#em-pdf").checked ? { name: d.fileBase + ".pdf", html: reportHtml(d, { photos: $("#rp-photos").checked }) } : null, attachments: atts });
+      const body = finalHtml(d, false).replace(/<body([^>]*)>/, `<body$1>${msgHtml}`);
+      const r = await callScript("email", { from, fromName: s.senderName || profile.name, to, cc, subject, text: (msg ? msg + "\n\n" : "") + reportText(d), html: body,
+        pdf: $("#em-pdf").checked ? { name: d.fileBase + ".pdf", html: finalHtml(d, $("#rp-photos").checked) } : null, attachments: atts });
       if (r.ok) { closeDlg(); toast(L(`اتبعت من ${r.from}`, `Sent from ${r.from}`)); return; }
       if (r.error === "alias_missing") {
         err.innerHTML = esc(scriptErr("alias_missing")) + ` <button class="btn ghost small" type="button" id="em-fb">${L("افتح Outlook جاهز بدل كده", "Open Outlook instead")}</button>`;
-        $("#em-fb").addEventListener("click", () => { composeFallback(from, to, cc, subject, d, xlsx); closeDlg(); });
+        $("#em-fb").addEventListener("click", () => { composeFallback(from, to, cc, subject, d, xlsx, msg); closeDlg(); });
       } else err.textContent = scriptErr(r.error);
     } catch (e) { err.textContent = scriptErr(e.message); }
     go.disabled = false; go.textContent = L("إرسال", "Send");
   });
 }
 // بدون سكريبت: نفتح Gmail أو Outlook جاهز بالمحتوى، وننزّل الملف علشان يترفق
-function composeFallback(from, to, cc, subject, d, xlsx) {
-  const body = reportText(d) + "\n\n" + L("(الملف المرفق اتنزّل على جهازك، ارفقه قبل ما تبعت)", "(The attachment was downloaded to your device; attach it before sending)");
+function composeFallback(from, to, cc, subject, d, xlsx, msg) {
+  const body = (msg ? msg + "\n\n" : "") + reportText(d) + "\n\n" + L("(الملف المرفق اتنزّل على جهازك، ارفقه قبل ما تبعت)", "(The attachment was downloaded to your device; attach it before sending)");
   const isWork = from && settings.work && from.toLowerCase() === settings.work.toLowerCase();
-  const q = (o) => Object.entries(o).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
+  const q = o => Object.entries(o).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
   const url = isWork ? `https://outlook.office.com/mail/deeplink/compose?${q({ to: to.join(","), cc: cc.join(","), subject, body })}`
     : `https://mail.google.com/mail/?view=cm&fs=1&${q({ authuser: from, to: to.join(","), cc: cc.join(","), su: subject, body })}`;
   if (xlsx) download(xlsx, d.fileBase + ".xlsx");
@@ -2538,7 +2706,7 @@ async function runTool(name, a) {
 /* ================= Google Apps Script (email + assistant) ================= */
 const APPS_SCRIPT = `// Mechanical Inspection Guide - email & assistant helper (Google Apps Script)
 // Deploy: Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone.
-// Assistant: Project Settings > Script Properties > add GEMINI_KEY (free key from aistudio.google.com) and GEMINI_MODEL (e.g. gemini-4-hydrogen).
+// Assistant: Project Settings > Script Properties > add GEMINI_KEY (free key from aistudio.google.com) and GEMINI_MODEL (e.g. gemini-3.5-flash-lite).
 const PROJECT_ID = '${firebaseConfig.projectId}';
 
 function doPost(e) {
@@ -2608,7 +2776,7 @@ function ai_(req) {
   const props = PropertiesService.getScriptProperties();
   const key = props.getProperty('GEMINI_KEY');
   if (!key) return { ok: false, error: 'ai_not_configured' };
-  const model = props.getProperty('GEMINI_MODEL') || 'gemini-4-hydrogen';
+  const model = props.getProperty('GEMINI_MODEL') || 'gemini-3.5-flash-lite';
   const res = UrlFetchApp.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent',
     { method: 'post', contentType: 'application/json', headers: { 'x-goog-api-key': key }, payload: JSON.stringify(req.payload || {}), muteHttpExceptions: true });
   let body = {};
@@ -2626,7 +2794,7 @@ document.addEventListener("click", ev => {
 
 const dlg = $("#dlg");
 function openDlg(html) { $("#dlg-body").innerHTML = html; dlg.showModal(); }
-function closeDlg() { dlg.close(); }
+function closeDlg() { dlg.close(); dlg.classList.remove("wide"); }
 dlg.addEventListener("click", ev => { if (ev.target === dlg) closeDlg(); });
 
 function areaSelectHtml(id, sel, withRoot) {
