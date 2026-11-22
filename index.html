@@ -831,7 +831,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, getDocsFromServer, where,
+import { getFirestore, doc, getDoc, getDocFromServer, setDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, getDocsFromServer, where,
          query, orderBy, limit, serverTimestamp, writeBatch }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -1113,6 +1113,7 @@ async function ensureAreasOnce() {
       changed = true;
     });
     if (changed) { await batch.commit(); await loadData(); }
+    await normalizeOrder();
   } catch (e) { console.warn("areas", e); toast(authMsg(e)); }
 }
 
@@ -1804,13 +1805,54 @@ async function saveItems(e, items, msg) {
   } catch (err) { toast(authMsg(err)); }
 }
 
-async function swapOrder(col, a, b) {
+// Move one item up/down among its siblings, then renumber the whole group 0,1,2...
+// so no two siblings ever share the same order number (that is what made the order jump).
+let moving = false;
+async function moveSibling(col, sibs, i, dir) {
+  const j = i + dir;
+  if (moving || j < 0 || j >= sibs.length) return;
+  moving = true;
   try {
-    const batch = writeBatch(db);
-    batch.update(doc(db, col, a.id), { order: b.order ?? 0, updatedAt: serverTimestamp() });
-    batch.update(doc(db, col, b.id), { order: (a.order ?? 0) === (b.order ?? 0) ? (b.order ?? 0) + 1 : a.order ?? 0, updatedAt: serverTimestamp() });
-    await batch.commit(); await loadData(); renderEqAdmin();
+    const list = sibs.slice(); [list[i], list[j]] = [list[j], list[i]];
+    const batch = writeBatch(db); let n = 0;
+    list.forEach((x, k) => { if ((x.order ?? null) !== k) { batch.update(doc(db, col, x.id), { order: k, updatedAt: serverTimestamp() }); n++; } });
+    if (n) await batch.commit();
+    await loadData(); renderEqAdmin();
   } catch (err) { toast(authMsg(err)); }
+  moving = false;
+}
+
+// Admin, once per load: make every sibling group numbered 0..n-1 in the order it shows now.
+// The first time only, the main sections and the Cement Mills sub-areas go back to the plant's standard order.
+async function normalizeOrder() {
+  if (profile?.role !== "admin" || !dataOk || !areas.length) return;
+  // read the one-time flag from the server itself, so a slow settings load never repeats the reset
+  let fixedBefore = true;
+  try { const s = await getDocFromServer(doc(db, "settings", "app")); fixedBefore = s.exists() && s.data().orderFixed === true; } catch {}
+  const ops = [];
+  const fix = (col, list) => list.forEach((x, k) => { if ((x.order ?? null) !== k) { ops.push([col, x.id, k]); x.order = k; } });
+  if (!fixedBefore) {
+    const std = (list, names) => list.slice().sort((x, y) => {
+      const a = names.indexOf(x.name), b = names.indexOf(y.name);
+      return (a < 0 ? 999 : a) - (b < 0 ? 999 : b) || (x.order ?? 0) - (y.order ?? 0) || x.name.localeCompare(y.name);
+    });
+    fix("areas", std(kids(""), DEFAULT_TREE.map(t => t[0])));
+    DEFAULT_TREE.forEach(([name, subs]) => { const a = kids("").find(x => x.name === name); if (a && subs.length) fix("areas", std(kids(a.id), subs)); });
+  }
+  const groups = new Map(areas.map(a => [pid(a), 1]));
+  groups.forEach((_, p) => fix("areas", kids(p)));
+  const eg = new Map();
+  equipment.forEach(e => { const k = `${e.areaId}|${e.parentEqId || ""}`; (eg.get(k) || eg.set(k, []).get(k)).push(e); });
+  eg.forEach(list => fix("equipment", list));
+  try {
+    for (let i = 0; i < ops.length; i += 450) {
+      const b = writeBatch(db);
+      ops.slice(i, i + 450).forEach(([col, id, k]) => b.update(doc(db, col, id), { order: k, updatedAt: serverTimestamp() }));
+      await b.commit();
+    }
+    if (!fixedBefore) { await setDoc(doc(db, "settings", "app"), { orderFixed: true }, { merge: true }); settings.orderFixed = true; }
+    if (ops.length) { await loadData(); console.info("order normalized", ops.length); }
+  } catch (e) { console.warn("order", e); }
 }
 
 function bindTree() {
@@ -1825,8 +1867,8 @@ function bindTree() {
     acts.querySelector(".copy-area").addEventListener("click", () => copyDialog("area", a));
     acts.querySelector(".pull-area").addEventListener("click", () => pullDialog("area", a));
     acts.querySelector(".xl-area").addEventListener("click", () => excelDialog(a.id));
-    acts.querySelector(".area-up").addEventListener("click", () => swapOrder("areas", a, sibs[ai - 1]));
-    acts.querySelector(".area-down").addEventListener("click", () => swapOrder("areas", a, sibs[ai + 1]));
+    acts.querySelector(".area-up").addEventListener("click", () => moveSibling("areas", sibs, ai, -1));
+    acts.querySelector(".area-down").addEventListener("click", () => moveSibling("areas", sibs, ai, 1));
     acts.querySelector(".del-area")?.addEventListener("click", async () => {
       if (!confirm(`حذف "${a.name}"؟`)) return;
       try { await deleteDoc(doc(db, "areas", a.id)); toast("اتحذفت"); await loadData(); renderEqAdmin(); } catch (err) { toast(authMsg(err)); }
@@ -1850,8 +1892,8 @@ function bindTree() {
     acts.querySelector(".copy-eq").addEventListener("click", () => copyDialog("eq", e));
     acts.querySelector(".parts-from").addEventListener("click", () => partsFromDialog(e));
     acts.querySelector(".pull-eq").addEventListener("click", () => pullDialog("eq", e));
-    acts.querySelector(".eq-up").addEventListener("click", () => swapOrder("equipment", e, sibs[ei - 1]));
-    acts.querySelector(".eq-down").addEventListener("click", () => swapOrder("equipment", e, sibs[ei + 1]));
+    acts.querySelector(".eq-up").addEventListener("click", () => moveSibling("equipment", sibs, ei, -1));
+    acts.querySelector(".eq-down").addEventListener("click", () => moveSibling("equipment", sibs, ei, 1));
     node.querySelectorAll(":scope > .parts > .part").forEach(li => {
       const k = +li.dataset.k;
       li.querySelector(".p-freq").addEventListener("change", ev => {
@@ -2099,7 +2141,7 @@ $("#st-save").addEventListener("click", async () => {
   err.textContent = "";
   const data = { scriptUrl: url, senderName: $("#st-name").value.trim().slice(0, 80), personal: $("#st-personal").value.trim(), work: $("#st-work").value.trim(),
     defaultTo: $("#st-to").value.trim(), defaultCc: $("#st-cc").value.trim(), updatedAt: serverTimestamp() };
-  try { await setDoc(doc(db, "settings", "app"), data); settings = { ...settings, ...data }; toast(L("اتحفظت الإعدادات", "Settings saved")); renderAiBox(); }
+  try { await setDoc(doc(db, "settings", "app"), data, { merge: true }); settings = { ...settings, ...data }; toast(L("اتحفظت الإعدادات", "Settings saved")); renderAiBox(); }
   catch (e) { err.textContent = authMsg(e); }
 });
 $("#st-copy").addEventListener("click", async () => {
