@@ -464,6 +464,10 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
             <button class="btn ghost small" id="xl-root" type="button">استيراد من Excel</button>
           </div>
         </div>
+        <div class="alert" id="dup-banner" hidden role="status">
+          <span id="dup-text"></span>
+          <button class="btn small" id="dup-fix" type="button">إصلاح التكرار</button>
+        </div>
         <div class="card" id="eq-import" hidden>
           <h3 style="margin-bottom:8px">مفيش معدات لسه</h3>
           <p class="hint" style="margin-bottom:12px">تقدر تستورد القائمة الأساسية (14 معدة و95 Part من ملف Schedule For CMs Inspection) تحت Gypsum Plant، وبعدين تعدّل تكرار كل Part.</p>
@@ -574,7 +578,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, where,
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, getDocsFromServer, where,
          query, orderBy, limit, serverTimestamp, writeBatch }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -806,6 +810,7 @@ function areaOptions(list, keep) {
     .map(({ a, depth }) => `<option value="${esc(a.id)}" ${a.id === keep ? "selected" : ""}>${indent(depth)}${esc(a.name)}</option>`).join("");
 }
 
+let dataOk = false;
 async function loadData() {
   try {
     const [eqSnap, stSnap, arSnap] = await Promise.all([getDocs(collection(db, "equipment")), getDocs(collection(db, "status")), getDocs(collection(db, "areas"))]);
@@ -814,16 +819,21 @@ async function loadData() {
     equipment = eqSnap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => areaRank(a) - areaRank(b) || areaName(a).localeCompare(areaName(b)) || (a.order ?? 0) - (b.order ?? 0) || a.tag.localeCompare(b.tag));
     statusMap = Object.fromEntries(stSnap.docs.map(d => [d.id, d.data()]));
-  } catch (e) { toast(authMsg(e)); }
+    dataOk = true;
+    return true;
+  } catch (e) { dataOk = false; toast(authMsg(e)); return false; }
 }
 const routesOf = list => [...new Set(list.map(areaName))];
 
 // أول مرة: نعمل هيكل المصنع الأساسي، وننقل أي معدة مالهاش Area تحت Gypsum Plant
-async function ensureAreas() {
-  if (profile?.role !== "admin") return;
+let ensuring = null;
+function ensureAreas() { return ensuring ||= ensureAreasOnce().finally(() => { ensuring = null; }); }
+async function ensureAreasOnce() {
+  if (profile?.role !== "admin" || !dataOk) return;
   try {
     const batch = writeBatch(db); let changed = false;
-    if (!areas.length) {
+    // قبل ما نعمل الهيكل الأساسي، نتأكد من السيرفر نفسه إن مفيش أقسام فعلًا (مش مجرد تحميل فشل)
+    if (!areas.length && (await getDocsFromServer(query(collection(db, "areas"), limit(1)))).empty) {
       DEFAULT_TREE.forEach(([name, subs], i) => {
         const ref = doc(collection(db, "areas"));
         areas.push({ id: ref.id, name, order: i, parentId: "" });
@@ -1404,7 +1414,56 @@ function freqSummary(items) {
 const openAreas = new Set(), openEqs = new Set();
 let areasInit = false;
 
+function dupGroups(list) {
+  const g = {};
+  list.forEach(a => { const k = `${pid(a)}|${a.name.trim().toLowerCase()}`; (g[k] ||= []).push(a); });
+  return Object.values(g).filter(x => x.length > 1);
+}
+
+// دمج الأقسام المتكررة (نفس الاسم في نفس المكان) في نسخة واحدة، من غير ما يضيع أي معدة
+async function fixDuplicates() {
+  const A = areas.map(a => ({ ...a })), E = equipment.map(e => ({ id: e.id, areaId: e.areaId }));
+  const areaUpd = new Map(), eqUpd = new Map(), del = new Set();
+  const score = a => {
+    const sub = new Set([a.id]); let grew = true;
+    while (grew) { grew = false; A.forEach(x => { if (!sub.has(x.id) && sub.has(pid(x))) { sub.add(x.id); grew = true; } }); }
+    return E.filter(e => sub.has(e.areaId)).length * 1000 + sub.size;
+  };
+  for (let pass = 0; pass < 50; pass++) {
+    const groups = dupGroups(A);
+    if (!groups.length) break;
+    for (const grp of groups) {
+      const ranked = grp.slice().sort((x, y) => score(y) - score(x) || (x.createdAt?.toMillis?.() ?? 0) - (y.createdAt?.toMillis?.() ?? 0));
+      const keep = ranked[0];
+      for (const d of ranked.slice(1)) {
+        A.filter(x => pid(x) === d.id).forEach(x => { x.parentId = keep.id; areaUpd.set(x.id, keep.id); });
+        E.filter(e => e.areaId === d.id).forEach(e => { e.areaId = keep.id; eqUpd.set(e.id, keep.id); });
+        A.splice(A.indexOf(d), 1); del.add(d.id); areaUpd.delete(d.id);
+      }
+    }
+  }
+  const ops = [];
+  areaUpd.forEach((parentId, id) => ops.push(b => b.update(doc(db, "areas", id), { parentId, updatedAt: serverTimestamp() })));
+  eqUpd.forEach((areaId, id) => ops.push(b => b.update(doc(db, "equipment", id), { areaId, updatedAt: serverTimestamp() })));
+  del.forEach(id => ops.push(b => b.delete(doc(db, "areas", id))));
+  for (let i = 0; i < ops.length; i += 450) { const b = writeBatch(db); ops.slice(i, i + 450).forEach(f => f(b)); await b.commit(); }
+  return del.size;
+}
+
+$("#dup-fix").addEventListener("click", async () => {
+  const btn = $("#dup-fix"); btn.disabled = true; btn.textContent = "جاري الإصلاح...";
+  try {
+    const n = await fixDuplicates();
+    await loadData(); await fixRoutes();
+    toast(`اتشال ${n} تكرار، وكل المعدات في مكانها`); renderEqAdmin(); refreshOverdue();
+  } catch (e) { toast(authMsg(e)); }
+  btn.disabled = false; btn.textContent = "إصلاح التكرار";
+});
+
 function renderEqAdmin() {
+  const dups = dupGroups(areas).reduce((n, g) => n + g.length - 1, 0);
+  $("#dup-banner").hidden = !dups;
+  if (dups) $("#dup-text").textContent = `فيه ${dups} أقسام متكررة بنفس الاسم في نفس المكان. دوس "إصلاح التكرار" علشان يتدمجوا في نسخة واحدة، من غير ما أي معدة تضيع.`;
   $("#eq-import").hidden = equipment.length > 0;
   $("#imp-freq").innerHTML = freqOptions("monthly");
   if (!areas.length) { $("#eq-admin-list").innerHTML = `<div class="empty">جاري تجهيز الهيكل...</div>`; return; }
