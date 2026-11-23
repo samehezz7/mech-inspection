@@ -35,7 +35,7 @@
   --good-bg:#1D3326; --monitor-bg:#3A2C14; --action-bg:#3D1F1C; --focus:#7AB0F0;
   --chrome:#263036; --chrome-ink:#E4E8E7;
 }
-*,*::before,*::after{box-sizing:inherit}
+*,*::before,*::after{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.6}
 [hidden]{display:none !important}
@@ -391,11 +391,12 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
 .eq-node>summary .tag{direction:ltr;font-weight:700}
 .eq-node .node-actions{padding:0 12px 10px}
 .parts{list-style:none;margin:0 12px 10px;padding:0 0 0 0;padding-inline-start:12px;border-inline-start:2px solid var(--line);display:grid;gap:6px}
-.part{display:grid;grid-template-columns:1fr 140px auto;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.part{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,170px) 44px;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
 .part .ptext{direction:ltr;text-align:left;unicode-bidi:plaintext;font-size:.95rem}
 .part select{background:var(--bg);border:1.5px solid var(--line);border-radius:6px;padding:6px 8px;min-height:40px;width:100%}
-.add-part{display:grid;grid-template-columns:1fr 140px auto auto;gap:8px;margin:0 12px 12px;align-items:center}
+.add-part{display:grid;grid-template-columns:minmax(0,1fr) 170px auto auto;gap:8px;margin:0 12px 12px;align-items:center}
 .add-part input,.add-part select{background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;min-height:44px;width:100%}
+.part select,.add-part select,.ed-item select,.add-part input,.ed-item input{min-width:0;max-width:100%;text-overflow:ellipsis}
 .empty-node{color:var(--muted);font-size:.9rem;padding:4px 0}
 .area-node .area-node{background:var(--bg);border-radius:6px}
 .area-node .area-node>summary{border-inline-start-color:var(--muted);padding:10px 12px;border-radius:6px}
@@ -416,13 +417,16 @@ dialog.dlg::backdrop{background:rgba(0,0,0,.55)}
 .bulk{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .bulk select{flex:1 1 180px;max-width:260px}
 .ed-items{list-style:none;padding:0;margin:0 0 12px;display:grid;gap:8px}
-.ed-item{display:grid;grid-template-columns:auto 1fr 150px auto;gap:8px;align-items:center;background:var(--bg);border:1.5px solid var(--line);border-radius:6px;padding:8px}
+.ed-item{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,170px) auto;gap:10px;align-items:center;background:var(--bg);border:1.5px solid var(--line);border-radius:6px;padding:8px}
 .ed-item .n{color:var(--muted);font-weight:500;min-width:1.5em;text-align:center}
 .ed-item input,.ed-item select{background:var(--panel);border:1.5px solid var(--line);border-radius:6px;padding:8px 10px;min-height:44px;width:100%}
 .ed-btns{display:flex;gap:6px}
 .icon-btn{min-width:44px;min-height:44px;border:1.5px solid var(--line);background:var(--panel);border-radius:6px;cursor:pointer;font-weight:700}
 .icon-btn:disabled{opacity:.35;cursor:default}
 .icon-btn.rm{color:var(--action)}
+.part>*,.ed-item>*{min-width:0}
+.part select{width:100%;max-width:100%}
+.part .p-del{width:44px;min-width:44px;padding:0;margin:0;justify-self:end;position:relative}
 @media (max-width:620px){.ed-item{grid-template-columns:auto 1fr auto}.ed-item .ed-text{grid-column:2/4}.ed-item select{grid-column:2}.ed-item .ed-btns{grid-column:3}.ed-item .icon-btn{min-width:40px}}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:grid;place-items:center;z-index:60;padding:64px 16px 16px}
 .lightbox img{max-width:100%;max-height:calc(100vh - 80px);border-radius:4px}
@@ -3310,7 +3314,7 @@ async function loadUsers() {
           <option value="inspector" ${u.role === "inspector" ? "selected" : ""}>مفتش</option>
           <option value="admin" ${u.role === "admin" ? "selected" : ""}>مدير</option>
         </select></td>
-        <td><span class="u-st">${u.active ? `<span class="chip good">${L("شغال", "Active")}</span>` : `<span class="chip action">${L("موقوف", "Disabled")}</span>`}${me ? "" : ` <button class="btn small ${u.active ? "danger" : ""} toggle" type="button">${u.active ? "إيقاف" : "تفعيل"}</button>`}</span></td>
+        <td><span class="u-st">${u.active ? `<span class="chip good">${L("شغال", "Active")}</span>` : `<span class="chip action">${L("موقوف", "Disabled")}</span>`}${me ? "" : ` <button class="btn small ${u.active ? "danger" : ""} toggle" type="button">${u.active ? "إيقاف" : "تفعيل"}</button> <button class="btn small ghost del-user" type="button" aria-label="${L("حذف", "Delete")} ${esc(u.name)}">${L("حذف", "Delete")}</button>`}</span></td>
       </tr>`;
     }).join("");
     body.querySelectorAll("tr").forEach(tr => {
@@ -3318,6 +3322,13 @@ async function loadUsers() {
       tr.querySelector(".role")?.addEventListener("change", async ev => {
         try { await updateDoc(doc(db, "users", uid), { role: ev.target.value }); toast("اتغيرت الصلاحية"); }
         catch (e) { toast(authMsg(e)); loadUsers(); }
+      });
+      tr.querySelector(".del-user")?.addEventListener("click", async () => {
+        const u = users.find(x => x.uid === uid);
+        if (!confirm(L(`حذف ${u.name} (${u.username}) نهائي؟\nمش هيقدر يدخل الموقع تاني، وتفتيشاته القديمة هتفضل في السجل باسمه.`,
+          `Delete ${u.name} (${u.username}) permanently?\nThey will not be able to sign in again. Their past inspections stay in history under their name.`))) return;
+        try { await deleteDoc(doc(db, "users", uid)); toast(L(`اتحذف ${u.name}`, `${u.name} deleted`)); loadUsers(); }
+        catch (e) { toast(authMsg(e)); }
       });
       tr.querySelector(".toggle")?.addEventListener("click", async () => {
         const u = users.find(x => x.uid === uid);
@@ -3346,7 +3357,11 @@ $("#add-user").addEventListener("submit", async ev => {
     ev.target.reset();
     toast(`اتضاف ${name}`);
     loadUsers();
-  } catch (e) { err.textContent = authMsg(e); }
+  } catch (e) {
+    err.textContent = authMsg(e);
+    if (e?.code === "auth/email-already-in-use" && ![...document.querySelectorAll("#users-body .u")].some(x => x.textContent === user))
+      err.textContent = L("اسم المستخدم ده كان لمستخدم اتحذف، ومينفعش يتستخدم تاني. اختار اسم تاني (مثلًا زوّد رقم في الآخر).", "This username belonged to a deleted user and can't be reused. Choose another one (e.g. add a number).");
+  }
   btn.disabled = false;
 });
 
